@@ -1,0 +1,23 @@
+NAME
+ur3
+
+
+DH Parameters
+DHj0   0   0   0   0
+DHj1   0.128   0   0   -pi/2
+DHj2   0   0.612   pi/2   0
+DHj3   0.164   -0.572   pi/2   0
+DHj4   0.11   0   -pi/2   pi/2
+DHj5   0.0   0   0   pi/2
+DHj6   0.092   0   0   0
+
+
+STL
+STLj0 ur10_joint0
+STLj1 ur10_joint1
+STLj2 ur10_joint2
+STLj3 ur10_joint3
+STLj4 ur10_joint4
+STLj5 ur10_joint5
+STLj6 ur10_joint6
+

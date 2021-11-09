@@ -1,0 +1,4 @@
+string id
+---
+bool result
+float32 voxelSize

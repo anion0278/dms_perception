@@ -1,0 +1,10 @@
+uint32[] array
+string id
+int32 voxelCount
+float32 voxelSize
+---
+float32 percentageVoxelOccupancy
+float32 voxelSize
+float32 deltaTimeFilter
+float32[] joints
+bool result
