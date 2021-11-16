@@ -15,15 +15,18 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   roscpp
   rospy
-  std_msgs
+  std_msgs 
+sensor_msgs
+realsense2
 )
 
+find_package(OpenCV 4.5.4 REQUIRED)
+
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+ add_message_files(
+   FILES
+   CameraData.msg
+)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -38,12 +41,15 @@ add_service_files(
    FILES
    pcSubscribe.srv
    PointCloud.srv
+   ImageRec.srv
 )
 
 
 generate_messages(
    DEPENDENCIES
+sensor_msgs
 )
+
 ## Generate actions in the 'action' folder
 # add_action_files(
 #   FILES
@@ -85,11 +91,10 @@ include_directories(
 )
 include_directories(.)
 
-find_package(realsense2)
-find_package(OpenCV 4.5.4 REQUIRED)
-
 include_directories(${OpenCV_INCLUDE_DIRS})
-include_directories( ${catkin_INCLUDE_DIRS})
+include_directories(${catkin_INCLUDE_DIRS})
+
+set(cv_bridge_DIR /usr/local/share/cv_bridge/cmake)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -150,5 +155,11 @@ add_executable(main_node
 target_link_libraries(main_node
         ${OpenCV_LIBS}
         ${realsense2_LIBRARY})
+
+include_directories(/home/k354jn1/catkin_ws/src/vision_opencv/cv_bridge/include/cv_bridge)
+link_directories(/home/k354jn1/catkin_ws/src/vision_opencv/cv_bridge/build/devel/lib)
+target_link_libraries(main_node /home/k354jn1/catkin_ws/src/vision_opencv/cv_bridge/build/devel/lib)
+target_link_libraries(main_node /home/k354jn1/catkin_ws/src/vision_opencv/cv_bridge/build/devel/lib/libcv_bridge.so)
+
 
 

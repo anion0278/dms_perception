@@ -92,8 +92,6 @@ void Aruco::Detect(const cv::Mat& inputImage, cv::Mat& outputImage)
 	cv::Mat gray;
 	cv::cvtColor(inputImage, gray, cv::COLOR_RGB2GRAY);
 
-
-
 	cv::aruco::detectMarkers(gray, dictionary, markerCorners, markerIds, dparam, rejectedCandidates);
 	if (markerIds.size() > 0)
 		cv::aruco::drawDetectedMarkers(outputImage, markerCorners, markerIds);

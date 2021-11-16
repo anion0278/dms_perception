@@ -24,6 +24,7 @@ enum CAM_DESC
 	RS_30_640_480,
 	RS_60_640_480,
 	RS_90_256_144,
+	RS_30_320_240,
 };
 
 
@@ -32,7 +33,7 @@ class RSCamera
 
 public:
 	static void Init();
-	static void GetRGBImage(cv::Mat& image);
+	static void GetRGBImage(cv::Mat& image, bool detectAruco);
 	static void GetDepthImage(Image<float>& image);
 	static void Start(CAM_DESC rgb, CAM_DESC depth);
 

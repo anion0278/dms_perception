@@ -34,19 +34,23 @@ void RSCamera::Init()
 	desc.resH = 144;
 	desc.resW = 256;
 	descs.push_back(desc);
+	desc.frameRate = 30;
+	desc.resH = 240;
+	desc.resW = 320;
+	descs.push_back(desc);
 }
 
-void RSCamera::GetRGBImage(cv::Mat& image)
+void RSCamera::GetRGBImage(cv::Mat& image, bool detectAruco = true)
 {
-	std::cout<< "get rgb  " << std::endl;
+	std::cout<< "Recieving RGB data..." << std::endl;
 	//cv::Mat image;
 	if (m_rgb_frame != NULL)
 	{
-		std::cout<< "m_connected_camera  " << std::endl;
 		const int w = m_rgb_frame.as<video_frame>().get_width();
 		const int h = m_rgb_frame.as<video_frame>().get_height();
 		image = cv::Mat(cv::Size(w, h), CV_8UC3, (void*)m_rgb_frame.get_data(), cv::Mat::AUTO_STEP);
-                Aruco::Detect(image, image);
+		if (detectAruco)
+        	Aruco::Detect(image, image);
 	}
 	//TODO: Zkusit jen kopirovat data a nevytvaret novy objekt memcpy
 }
@@ -56,6 +60,8 @@ void RSCamera::GetDepthImage(Image<float>& image)
 	std::lock_guard<std::mutex> guard(depth_lock);
 	if (m_depth_frame != NULL)
 		image.FillFromCamera((void*)(m_depth_frame.get_data()), m_scale);
+	else
+		printf("COULD NOT READ FROM CAMERA !");
 }
 
 void RSCamera::Start(CAM_DESC rgb, CAM_DESC depth)
@@ -73,7 +79,7 @@ void RSCamera::Start(CAM_DESC rgb, CAM_DESC depth)
 		m_connected_camera = true;
 		pipe = pipeline(ctx);
 		config cfg;
-		cfg.enable_stream(RS2_STREAM_COLOR, -1, rgb_desc.resW, rgb_desc.resH, RS2_FORMAT_BGR8, rgb_desc.frameRate);
+		cfg.enable_stream(RS2_STREAM_COLOR, -1, rgb_desc.resW, rgb_desc.resH, RS2_FORMAT_RGB8, rgb_desc.frameRate);
 		cfg.enable_stream(RS2_STREAM_DEPTH, depth_desc.resW, depth_desc.resH, RS2_FORMAT_Z16, depth_desc.frameRate);
 		cfg.enable_device(serial_numbers[0]);
 		profile = pipe.start(cfg);
@@ -100,7 +106,10 @@ void RSCamera::Start(CAM_DESC rgb, CAM_DESC depth)
 		depth_to_rgb.SetPosition({(float)exintrin.translation[0], (float)exintrin.translation[1], (float)exintrin.translation[2]});
 		
 	}
-	std::cout << "ok -------------------";
+	else
+	{
+		std::cout << "Could not find any camera";
+	}
 	
 	
 	isRunning = true;

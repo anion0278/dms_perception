@@ -32,7 +32,6 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
- 
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <netinet/in.h>
@@ -40,6 +39,10 @@
 #include <arpa/inet.h>
 #include "std_msgs/Int32.h"
 //#include "RoboMathGL.h"
+
+#include "jetson_camera_node/CameraData.h"
+#include "sensor_msgs/Image.h"
+#include "cv_bridge/cv_bridge.h"
 
 constexpr float pi = 3.141592654;
 float voxelSize = 2.f;
@@ -224,8 +227,6 @@ void InitCalibTool()
 	setTrackbarPos("end_joint", calibWinName,6);
 	setTrackbarPos("end_joint", calibWinName,6);
 
-
-
 	setTrackbarPos("alfa",calibWinName, 0);
 	setTrackbarPos("beta",calibWinName, 0);
 	setTrackbarPos("gama",calibWinName, 0);
@@ -239,16 +240,19 @@ void InitCalibTool()
 int main(int argc, char** argv)
 {
 	GetIP();
-   	ros::init(argc, argv, "talker_" + id);
+   	ros::init(argc, argv, "cam_data_processor_" + id);
     	ros::NodeHandle n;
 	ros::ServiceClient clientInit = n.serviceClient<jetson_camera_node::pcSubscribe>("sub");
 	ros::ServiceClient clientData = n.serviceClient<jetson_camera_node::PointCloud>("data");
-    	//ros::Publisher chatter_pub = n.advertise<std_msgs::String>("chatter", 1000);
 	//ros::Subscriber sub = n.subscribe("pointPerVoxel",1000, NewPointPerVoxel);
 	UdpServer server;
+	
+	//ros::Publisher depthPublisher = n.advertise<sensor_msgs::Image>("camera_depth_image", 1);
+	//ros::Publisher rgbPublisher = n.advertise<sensor_msgs::Image>("camera_rgb_image", 1);
+	ros::Publisher cameraDataPublisher = n.advertise<jetson_camera_node::CameraData>("camera_data", 1);
 
 	RSCamera::Init();
-        RSCamera::Start(CAM_DESC::RS_30_1280_720, CAM_DESC::RS_30_640_480); // RS_30_640_480
+    RSCamera::Start(CAM_DESC::RS_30_320_240, CAM_DESC::RS_30_640_480); // RS_30_640_480
 
 	InitCalibTool();
 	Mat calibWin(10,500,CV_8UC3,Scalar(0,0,0));
@@ -291,14 +295,14 @@ int main(int argc, char** argv)
 
 	if(clientInit.call(message))
 	{
-                std::cout <<"it was OK -> " << message.response.voxelSize << std::endl;
+        std::cout <<"it was OK -> " << message.response.voxelSize << std::endl;
 		voxelSize = message.response.voxelSize;
 	}
 	else
 	{
      		std::cout <<"service call error " << std::endl;
 	}
-        ros::Rate loop_rate(100);
+    ros::Rate loop_rate(100);
 	Mat rgb_img;
 	//cam.SetView(Aruco::GetViewMatrix());
 	int keyPress = waitKey(1);
@@ -311,14 +315,20 @@ int main(int argc, char** argv)
         {
 		//RSCamera::Lock(rgb_img);
 		//cam.SetView(Aruco::GetViewMatrix());
-		//imshow("rgb", rgb_img);
-
-		Mat img;
-		RSCamera::GetDepthImage(source);
 		//std::cout <<  " fov   " << RSCamera::GetVFov() * 180.0/pi << std::endl;
-		//img = source.ToOpenCV();
+
+		RSCamera::GetDepthImage(source);
+
+		Mat rgbImg;
+		RSCamera::GetRGBImage(rgbImg, false);
+		
+		jetson_camera_node::CameraData camData;
+		camData.depth = *cv_bridge::CvImage(std_msgs::Header(), "mono8", source.ToOpenCV()).toImageMsg();
+		camData.color = *cv_bridge::CvImage(std_msgs::Header(), "rgb8", rgbImg).toImageMsg();
+		cameraDataPublisher.publish(camData);
+
 		Clock::update();
-                //std::cout << (int)(Clock::getDeltaSec() * 1000) << " [ms], ->    " << 1.0 / Clock::getDeltaSec() << " [fps]  calib>" << manual_calibration << std::endl; //; // << " ,    " << 1.f / delta << " " << std::endl;
+        //std::cout << (int)(Clock::getDeltaSec() * 1000) << " [ms], ->    " << 1.0 / Clock::getDeltaSec() << " [fps]  calib>" << manual_calibration << std::endl; //; // << " ,    " << 1.f / delta << " " << std::endl;
 
 		depth.Fill(10.f);
 		mask.Fill(true);
@@ -348,9 +358,7 @@ int main(int argc, char** argv)
 
 			Matrix::Multiply(mat,matGBtoBase,mat);
 
-
 			Matrix rgbToDepthCalibration = RSCamera::GetTFDepthToRgb(); 
-		
 
 			rgbToDepthCalibration.Invert();
 			Matrix::Multiply(mat, mat, rgbToDepthCalibration);
@@ -359,14 +367,11 @@ int main(int argc, char** argv)
 			resMat.SaveToFile("/home/jetson/Desktop/DMS_01/camPose.bmat");
 			cam.SetView(resMat);
 
-
 			start_j = getTrackbarPos("start_joint",calibWinName);
 			end_j = getTrackbarPos("end_joint",calibWinName);
 			deltaFilter = ( getTrackbarPos("deltaFilter",calibWinName) - 1000)/1000.0;
 			SaveToFile("/home/jetson/Desktop/DMS_01/deltaFilter.bfloat", deltaFilter);
 		}
-
-			
 
 		Matrix actual(1.f);
 
@@ -414,8 +419,7 @@ int main(int argc, char** argv)
 			Engine::TransformMeshPerspectiveDivide(mesh, cam.GetProj());
 			Engine::BackFaceCull(mesh);
 			Engine::ViewportScale(mesh, RSCamera::GetDepthDesc().resH, RSCamera::GetDepthDesc().resW);
-                	Engine::BuildDepthMap(mesh, RSCamera::GetDepthDesc().resH, RSCamera::GetDepthDesc().resW, depth);
-               
+            Engine::BuildDepthMap(mesh, RSCamera::GetDepthDesc().resH, RSCamera::GetDepthDesc().resW, depth);
 		 }
 		std::cout << "delta filter  " << deltaFilter << std::endl;
 		depth.Compare(source.GetPtr(), mask, 1.0f + deltaFilter);
@@ -424,12 +428,9 @@ int main(int argc, char** argv)
 
 		RSCamera::ProjectDepthToPointCloud(source, mask, voxels);
 
-
 		Matrix m = cam.GetView(); //Aruco::GetViewMatrix();
 		m.Invert();
 		m.Print();
-
-		//std::cout << m._41<< " " << m._42 << " " <<  m._43 << std::endl; //; // << " ,    " << 1.f / delta << " " << std::endl;
 
 		Matrix::Multiply(m, m, Matrix::BuildRotationZ(-180_deg));
 		vector<Vec3> voxelsInScene;
@@ -442,8 +443,6 @@ int main(int argc, char** argv)
 		Vec3 camPos = Vec3(m._41,m._42,m._43);
 		//float percentileTreshold = 0.5;
                 OctoMap::AlignToMap3(voxelsInScene, indexedVoxelsHesh, voxelSize, percentageVoxelOccupancy, camPos, m.GetUnitZ());
-
-                
 
 		jetson_camera_node::PointCloud data_message;
         	//data_message.request.array = indexedVoxelsHesh;
