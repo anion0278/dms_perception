@@ -267,9 +267,6 @@ bool Matrix::LoadFromFile(const std::string& name)
 	}
 }
 
-
-
-
 void Matrix::FillRotationX(float angle)
 {
 	FillIdentity();

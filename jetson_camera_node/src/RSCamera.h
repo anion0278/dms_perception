@@ -8,6 +8,7 @@
 #include "Math.h"
 #include <vector>
 #include <atomic>
+#include <sensor_msgs/CameraInfo.h>
 
 using std::vector;
 
@@ -31,7 +32,7 @@ enum CAM_DESC
 class RSCamera
 {
 
-public:
+public: // Why everything is static???, why the whole class is used as static?? this is very wrong
 	static void Init();
 	static void GetRGBImage(cv::Mat& image, bool detectAruco);
 	static void GetDepthImage(Image<float>& image);
@@ -47,8 +48,11 @@ public:
 	static float GetVFov() { return vFov;}
 
 	static float GetHFov() { return hFov;}
-	static Matrix GetTFDepthToRgb() {return depth_to_rgb;}
+	static Matrix GetTFDepthToRgb() {return depth_to_rgb;} 
 
+	static float GetScale() {return m_scale;}
+
+	static sensor_msgs::CameraInfo GetCameraInfo();
 
 private:
 	static void Task();

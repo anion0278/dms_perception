@@ -64,6 +64,66 @@ void RSCamera::GetDepthImage(Image<float>& image)
 		printf("COULD NOT READ FROM CAMERA !");
 }
 
+sensor_msgs::CameraInfo RSCamera::GetCameraInfo()
+{
+	// from https://github.com/IntelRealSense/realsense-ros/blob/f400d682beee6c216052a419f419e95b797255ad/realsense2_camera/src/base_realsense_node.cpp#L1883
+	sensor_msgs::CameraInfo cameraInfo;
+	cameraInfo.width = m_intrin.width;
+	cameraInfo.height = m_intrin.height;
+	cameraInfo.header.frame_id = "camera_frame";
+
+	cameraInfo.K.at(0) = m_intrin.fx;
+	cameraInfo.K.at(2) = m_intrin.ppx;
+	cameraInfo.K.at(4) = m_intrin.fy;
+	cameraInfo.K.at(5) = m_intrin.ppy;
+	cameraInfo.K.at(8) = 1;
+
+	cameraInfo.P.at(0) = cameraInfo.K.at(0);
+	cameraInfo.P.at(1) = 0;
+	cameraInfo.P.at(2) = cameraInfo.K.at(2);
+	cameraInfo.P.at(3) = 0;
+	cameraInfo.P.at(4) = 0;
+	cameraInfo.P.at(5) = cameraInfo.K.at(4);
+	cameraInfo.P.at(6) = cameraInfo.K.at(5);
+	cameraInfo.P.at(7) = 0;
+	cameraInfo.P.at(8) = 0;
+	cameraInfo.P.at(9) = 0;
+	cameraInfo.P.at(10) = 1;
+	cameraInfo.P.at(11) = 0;
+
+	// set R (rotation matrix) values to identity matrix
+	cameraInfo.R.at(0) = 1.0;
+	cameraInfo.R.at(1) = 0.0;
+	cameraInfo.R.at(2) = 0.0;
+	cameraInfo.R.at(3) = 0.0;
+	cameraInfo.R.at(4) = 1.0;
+	cameraInfo.R.at(5) = 0.0;
+	cameraInfo.R.at(6) = 0.0;
+	cameraInfo.R.at(7) = 0.0;
+	cameraInfo.R.at(8) = 1.0;
+
+	int coeff_size(5);
+	cameraInfo.D.resize(coeff_size);
+	for (int i = 0; i < coeff_size; i++)
+	{
+		cameraInfo.D.at(i) = m_intrin.coeffs[i];
+	}
+
+	if (m_intrin.model == RS2_DISTORTION_KANNALA_BRANDT4)
+	{
+		cameraInfo.distortion_model = "equidistant";
+		coeff_size = 4;
+	} 
+	else 
+	{
+		cameraInfo.distortion_model = "plumb_bob";
+	}
+
+	//for (int i=0; i<5; i++)
+	//	printf("%9.6f", m_intrin.coeffs[i]);
+	return cameraInfo;
+}
+
 void RSCamera::Start(CAM_DESC rgb, CAM_DESC depth)
 {
 	rgb_desc = descs[(int)rgb];
@@ -174,7 +234,7 @@ void RSCamera::RgbTask()
 			//std::cout<< "rgb lock  " << std::endl;
 			//Lock();
 			//Sleep(10);
-                        std::this_thread::sleep_for(1000ms);
+			std::this_thread::sleep_for(1000ms);
 		}
 	}
 }

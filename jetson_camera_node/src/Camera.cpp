@@ -25,10 +25,10 @@ void PerspectiveCamera::BuildProj()
 void OrbitCamera::BuildView()
 {
 	if (m_rightHanded) {
-		// zaèínáme s kamerou dívající se ve smìru osy Y:
+		// zaï¿½ï¿½nï¿½me s kamerou dï¿½vajï¿½cï¿½ se ve smï¿½ru osy Y:
 		m_eyePosition = Vec3(0.0, -m_distance, 0.0);
 		Vec3 vUp(0.0, 0.0, 1.0f);
-		// otoèíme kameru kolem poèátku souøadnic podle požadovaného natoèení:
+		// otoï¿½ï¿½me kameru kolem poï¿½ï¿½tku souï¿½adnic podle poï¿½adovanï¿½ho natoï¿½enï¿½:
 		Matrix m, m1;
 		m.FillRotationX(-m_pitch);
 		m1.FillRotationZ(m_yaw + m_parentYaw);
@@ -40,14 +40,13 @@ void OrbitCamera::BuildView()
 		m_eyePosition = m_eyePosition + target;
 		//Vec3::Count(m_eyePosition, m_eyePosition, target);
 
-
 		m_view.FillLookAtRH(m_eyePosition, target, vUp);
 	}
 	else {
-		// zaèínáme s kamerou dívající se ve smìru osy Z:
+		// zaï¿½ï¿½nï¿½me s kamerou dï¿½vajï¿½cï¿½ se ve smï¿½ru osy Z:
 		m_eyePosition = Vec3(0.0, 0.0, -m_distance);
 		Vec3 vUp(0.0, 1.0f, 0.0);
-		// otoèíme kameru kolem poèátku souøadnic podle požadovaného natoèení:
+		// otoï¿½ï¿½me kameru kolem poï¿½ï¿½tku souï¿½adnic podle poï¿½adovanï¿½ho natoï¿½enï¿½:
 		Matrix m = Matrix::Identity;
 		Matrix m1 = Matrix::Identity;
 		m.FillRotationX(m_pitch);

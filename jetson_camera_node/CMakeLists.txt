@@ -18,22 +18,17 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs 
 sensor_msgs
 realsense2
+camera_info_manager
 )
 
 find_package(OpenCV 4.5.4 REQUIRED)
 
-## Generate messages in the 'msg' folder
- add_message_files(
+add_message_files(
    FILES
    CameraData.msg
+   HandData.msg
+   MultiHandData.msg
 )
-
-## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
 
 include_directories(.)
 include_directories( ${catkin_INCLUDE_DIRS})
@@ -44,24 +39,10 @@ add_service_files(
    ImageRec.srv
 )
 
-
 generate_messages(
    DEPENDENCIES
 sensor_msgs
 )
-
-## Generate actions in the 'action' folder
-# add_action_files(
-#   FILES
-#   Action1.action
-#   Action2.action
-# )
-
-## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs
-# )
 
 ###################################
 ## catkin specific configuration ##
@@ -79,10 +60,6 @@ catkin_package(
 #  DEPENDS system_lib
 )
 
-###########
-## Build ##
-###########
-
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
@@ -95,11 +72,6 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(${catkin_INCLUDE_DIRS})
 
 set(cv_bridge_DIR /usr/local/share/cv_bridge/cmake)
-
-## Add cmake target dependencies of the library
-## as an example, code may need to be generated before libraries
-## either from message generation or dynamic reconfigure
-# add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
@@ -149,17 +121,11 @@ add_executable(main_node
         src/UdpServer.h
         src/UdpServer.cpp)
 
-
 ## Specify libraries to link a library or executable target against
- target_link_libraries(main_node ${catkin_LIBRARIES})
+target_link_libraries(main_node ${catkin_LIBRARIES})
 target_link_libraries(main_node
         ${OpenCV_LIBS}
         ${realsense2_LIBRARY})
 
-include_directories(/home/k354jn1/catkin_ws/src/vision_opencv/cv_bridge/include/cv_bridge)
-link_directories(/home/k354jn1/catkin_ws/src/vision_opencv/cv_bridge/build/devel/lib)
-target_link_libraries(main_node /home/k354jn1/catkin_ws/src/vision_opencv/cv_bridge/build/devel/lib)
 target_link_libraries(main_node /home/k354jn1/catkin_ws/src/vision_opencv/cv_bridge/build/devel/lib/libcv_bridge.so)
-
-
 

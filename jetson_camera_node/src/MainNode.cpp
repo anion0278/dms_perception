@@ -27,6 +27,7 @@
 #include "ros/ros.h"
 #include "jetson_camera_node/pcSubscribe.h"
 #include "jetson_camera_node/PointCloud.h"
+#include <camera_info_manager/camera_info_manager.h>
 #include "std_msgs/String.h"
 #include <fstream>
 #include <stdio.h>
@@ -38,7 +39,7 @@
 #include <net/if.h>
 #include <arpa/inet.h>
 #include "std_msgs/Int32.h"
-//#include "RoboMathGL.h"
+#include <boost/array.hpp>
 
 #include "jetson_camera_node/CameraData.h"
 #include "sensor_msgs/Image.h"
@@ -146,8 +147,6 @@ void on_trackbar(int state, void* userdata)
 	Matrix mat(x,y,z);
 	Aruco::ManualCalibMatrix(mat);
 	std::cout <<"x "<< x <<"   y "<< y <<"   z "<< z << std::endl;
-
-
 
 	Matrix resMat;
 	Matrix rx = Matrix::BuildRotationX(getTrackbarPos("alfa_base",calibWinName)*pi/180.0);
@@ -261,7 +260,6 @@ int main(int argc, char** argv)
 	boundingBox.max = Vec3(0.5f, 0.2f, 1.5f);
 	boundingBox.min = Vec3(-0.5f, -0.6f, 0.0f);
 
-
 	float fNear = 0.1f;
 	float fFar = 100.f;
 	float fFov = RSCamera::GetVFov();//58_deg; //65_deg;// 55_deg;//41_deg;// 50_deg;
@@ -270,7 +268,6 @@ int main(int argc, char** argv)
 	Image<bool> mask(RSCamera::GetDepthDesc().resW, RSCamera::GetDepthDesc().resH, false);
 	Image<float> depth(RSCamera::GetDepthDesc().resW, RSCamera::GetDepthDesc().resH, 20.f);
 	Image<float> source(RSCamera::GetDepthDesc().resW, RSCamera::GetDepthDesc().resH, 20.f);
-
 
 	Aruco::Init();
 	Clock::init();
@@ -300,7 +297,7 @@ int main(int argc, char** argv)
 	}
 	else
 	{
-     		std::cout <<"service call error " << std::endl;
+		std::cout <<"service call error " << std::endl;
 	}
     ros::Rate loop_rate(100);
 	Mat rgb_img;
@@ -311,22 +308,13 @@ int main(int argc, char** argv)
 	cam.SetView(resMat);
 	float deltaFilter = 0.12f;
 	LoadFromFile("/home/jetson/Desktop/DMS_01/deltaFilter.bfloat", deltaFilter);
-        while (ros::ok() && keyPress !=27)
-        {
+	while (ros::ok() && keyPress !=27)
+	{
 		//RSCamera::Lock(rgb_img);
 		//cam.SetView(Aruco::GetViewMatrix());
 		//std::cout <<  " fov   " << RSCamera::GetVFov() * 180.0/pi << std::endl;
 
 		RSCamera::GetDepthImage(source);
-
-		Mat rgbImg;
-		RSCamera::GetRGBImage(rgbImg, false);
-		
-		jetson_camera_node::CameraData camData;
-		camData.depth = *cv_bridge::CvImage(std_msgs::Header(), "mono8", source.ToOpenCV()).toImageMsg();
-		camData.color = *cv_bridge::CvImage(std_msgs::Header(), "rgb8", rgbImg).toImageMsg();
-		cameraDataPublisher.publish(camData);
-
 		Clock::update();
         //std::cout << (int)(Clock::getDeltaSec() * 1000) << " [ms], ->    " << 1.0 / Clock::getDeltaSec() << " [fps]  calib>" << manual_calibration << std::endl; //; // << " ,    " << 1.f / delta << " " << std::endl;
 
@@ -436,13 +424,29 @@ int main(int argc, char** argv)
 		vector<Vec3> voxelsInScene;
 		voxelsInScene.reserve(voxels.size());
 
+		Mat rgbImg;
+		RSCamera::GetRGBImage(rgbImg, false);
+		jetson_camera_node::CameraData camData;
+		camData.depth = *cv_bridge::CvImage(std_msgs::Header(), "mono8", source.ToOpenCV()).toImageMsg();
+		camData.color = *cv_bridge::CvImage(std_msgs::Header(), "rgb8", rgbImg).toImageMsg();
+		camData.cameraInfo = RSCamera::GetCameraInfo();
+		camData.depthScale = RSCamera::GetScale();
+
+		std::vector<float> rot{ m.m[0][0], m.m[0][1], m.m[0][2], m.m[1][0], m.m[1][1], m.m[1][2], m.m[2][0], m.m[2][1], m.m[2][2] };
+		camData.extRotationMatrix = rot;
+
+		std::vector<float> tr{ m.m[3][0], m.m[3][1], m.m[3][2]};
+		camData.extTranslationVector = tr;
+
+		cameraDataPublisher.publish(camData);
+
 		OctoMap::TransformAndCheckWithBoundingBox(voxels, voxelsInScene, boundingBox, m);
 
 		unordered_set<uint32_t> indexedVoxelsHesh;
 
 		Vec3 camPos = Vec3(m._41,m._42,m._43);
 		//float percentileTreshold = 0.5;
-                OctoMap::AlignToMap3(voxelsInScene, indexedVoxelsHesh, voxelSize, percentageVoxelOccupancy, camPos, m.GetUnitZ());
+		OctoMap::AlignToMap3(voxelsInScene, indexedVoxelsHesh, voxelSize, percentageVoxelOccupancy, camPos, m.GetUnitZ());
 
 		jetson_camera_node::PointCloud data_message;
         	//data_message.request.array = indexedVoxelsHesh;
@@ -456,7 +460,6 @@ int main(int argc, char** argv)
 			auto result = voxelTimeStamp.insert({ voxel, 0 });
 			if(!result.second)
 				result.first->second = 0;
-
 		}
 
 		std::unordered_set<uint32_t> cleanVoxel;
@@ -475,14 +478,6 @@ int main(int argc, char** argv)
 		
 		
 		int index = 0;
-		/*
-		data_message.request.array.resize(indexedVoxelsHesh.size());
-		for(auto& voxel : indexedVoxelsHesh)
-		{
-			data_message.request.array[index] = voxel;
-			index = index + 1;
-		}
-		*/
 		data_message.request.array.resize(voxelTimeStamp.size());
 		for(auto& voxel : voxelTimeStamp)
 		{
@@ -490,13 +485,13 @@ int main(int argc, char** argv)
 			index = index + 1;
 		}
 	
-        	data_message.request.id = id;
+		data_message.request.id = id;
 		data_message.request.voxelCount = indexedVoxelsHesh.size();// 
 		data_message.request.voxelSize = voxelSize;
 
-        	if(clientData.call(data_message))
-        	{
-                        //std::cout <<"it was OK -> " << data_message.response.voxelSize << std::endl;
+		if(clientData.call(data_message))
+		{
+			//std::cout <<"it was OK -> " << data_message.response.voxelSize << std::endl;
 			voxelSize = data_message.response.voxelSize;
 			percentageVoxelOccupancy = data_message.response.percentageVoxelOccupancy;
 			deltaTimeFilter = data_message.response.deltaTimeFilter;
@@ -507,16 +502,14 @@ int main(int argc, char** argv)
 			jointsValues[3] = data_message.response.joints[3];
 			jointsValues[4] = data_message.response.joints[4];
 			jointsValues[5] = data_message.response.joints[5];
+		}
+		else
+		{
+			std::cout <<"service call error " << std::endl;
+		}
 
-
-        	}
-        	else
-        	{
-             		std::cout <<"service call error " << std::endl;
-        	}
-
-                auto depth_cv = mask.ToOpenCV();
-                imshow("depth_", depth_cv);
+		auto depth_cv = mask.ToOpenCV();
+		imshow("depth_", depth_cv);
 
 		if(manual_calibration)
 		{
@@ -539,9 +532,8 @@ int main(int argc, char** argv)
 			manual_calibration = !manual_calibration;
 		}
 
-                ros::spinOnce();
-
-                loop_rate.sleep();
+		ros::spinOnce();
+		loop_rate.sleep();
 	}
 	//RSCamera::Joint();	
 	//destroyAllWindows();
