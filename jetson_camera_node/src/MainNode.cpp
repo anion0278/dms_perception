@@ -424,6 +424,8 @@ int main(int argc, char** argv)
 		vector<Vec3> voxelsInScene;
 		voxelsInScene.reserve(voxels.size());
 
+
+
 		Mat rgbImg;
 		RSCamera::GetRGBImage(rgbImg, false);
 		jetson_camera_node::CameraData camData;
@@ -439,6 +441,7 @@ int main(int argc, char** argv)
 		camData.extTranslationVector = tr;
 
 		cameraDataPublisher.publish(camData);
+
 
 		OctoMap::TransformAndCheckWithBoundingBox(voxels, voxelsInScene, boundingBox, m);
 

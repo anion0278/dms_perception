@@ -1,2 +1,5 @@
 jetson_camera_node/src/mediapipe_node/__pycache__/config.cpython-36.pyc
 jetson_camera_node/src/mediapipe_node/config.pyc
+jetson_camera_node/src/master_node/__pycache__/udp.cpython-36.pyc
+jetson_camera_node/src/mediapipe_node/__pycache__/jetson_media.cpython-36.pyc
+jetson_camera_node/src/mediapipe_node/__pycache__/rs_utils2.cpython-36.pyc

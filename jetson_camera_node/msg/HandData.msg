@@ -1,2 +1,3 @@
-geometry_msgs/Point[] landMarks
+geometry_msgs/Point[] landmarks
 int32 gestureType
+int32 handSide
