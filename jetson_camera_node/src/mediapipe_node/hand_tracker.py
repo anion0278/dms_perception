@@ -35,7 +35,7 @@ class HandRecognizer():
         intrinsics = self.__get_intrinsics(cameraData.cameraInfo)
         extrinsics = self.__get_extrinsics(cameraData.extRotationMatrix, cameraData.extTranslationVector)
         scale = cameraData.depthScale
-        recognized_hands = self.recognizer.recognize_hand(cv_color_img, cv_depth_img, intrinsics, scale, extrinsics, debug = True)
+        recognized_hands = self.recognizer.recognize_hand(cv_color_img, cv_depth_img, intrinsics, scale, extrinsics, debug = False)
         self.__publish_hands(recognized_hands)
 
     def __publish_hands(self, recognized_hands_list):
@@ -67,6 +67,8 @@ class HandRecognizer():
         extrinsics = rs.extrinsics()
         extrinsics.rotation = extrinsics_rotation
         extrinsics.translation = extrinsics_translation
+        #extrinsics.rotation = [-1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,-1.0]
+        #extrinsics.translation = [0.0,-0.37,0.94]
         extrinsics.rotation = [1.0,0.0,0.0,0.0,-1.0,0.0,0.0,0.0,-1.0]
         extrinsics.translation = [0.062,-0.37,0.94]
         return extrinsics
