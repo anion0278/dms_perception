@@ -19,25 +19,23 @@ class HandRecognizer():
     def __init__(self):
         rospy.init_node("hand_tracker")
         self.recognizer = jm.MPRecognizer()
-        self.service = rospy.Service(config.hand_recognition_servise, ImageRec, self.process_service_request)
         self.subscriber = rospy.Subscriber("camera_data", CameraData, self.__process_topic_data)
         self.hands_pub = rospy.Publisher(rospy.get_name() + config.hands_data_topic, MultiHandData, queue_size = 1)
-        self.__cv_bridge = CvBridge()
 
     def run(self):
         rospy.spin()
 
     def __process_topic_data(self, cameraData):
         cv_color_img = ros_numpy.numpify(cameraData.color)
-        cv_depth_img = ros_numpy.numpify(cameraData.depth) 
+        cv_depth_img = cv2.resize(ros_numpy.numpify(cameraData.depth), (cv_color_img.shape[1], cv_color_img.shape[0]))
         #cv2.imshow("Processed RGB image", np.concatenate(
-            #(cv2.cvtColor(cv_color_img, cv2.COLOR_RGB2BGR), cv2.cvtColor(cv2.resize(cv_depth_img, (320, 240)), cv2.COLOR_GRAY2RGB)), axis=1))
+            #(cv2.cvtColor(cv_color_img, cv2.COLOR_RGB2BGR), cv2.cvtColor(cv_depth_img), cv2.COLOR_GRAY2RGB)), axis=1))
         #cv2.waitKey(2)
         cv_depth_img = cv_depth_img / 255.0
         intrinsics = self.__get_intrinsics(cameraData.cameraInfo)
         extrinsics = self.__get_extrinsics(cameraData.extRotationMatrix, cameraData.extTranslationVector)
         scale = cameraData.depthScale
-        recognized_hands = self.recognizer.recognize_hand(cv_color_img, cv_depth_img, intrinsics, scale, extrinsics)
+        recognized_hands = self.recognizer.recognize_hand(cv_color_img, cv_depth_img, intrinsics, scale, extrinsics, debug = True)
         self.__publish_hands(recognized_hands)
 
     def __publish_hands(self, recognized_hands_list):
@@ -49,7 +47,7 @@ class HandRecognizer():
             landmarks = hand[0]
             for i in range(len(landmarks)):
                 xyz_point = landmarks[i]
-                hand_msg.landmarks.append(Point(x=float(xyz_point[0]),y=float(xyz_point[1]),z=float(xyz_point[1])))
+                hand_msg.landmarks.append(Point(x=xyz_point[0],y=xyz_point[1],z=xyz_point[1]))
             multi_hand_msg.recognizedHands.append(hand_msg)
         self.hands_pub.publish(multi_hand_msg)
         

@@ -24,11 +24,12 @@ class MPRecognizer:
             return hand_coordinates
         return hand_coordinates
 
-    def recognize_hand(self,color,depth,intrinsics,scale,extrinsics):
+    def recognize_hand(self,color,depth,intrinsics,scale,extrinsics, debug = False):
         hand_coordinates = self.__recognize(color)
 
-        cv2.imshow("MediaPipe image", cv2.cvtColor(color, cv2.COLOR_RGB2BGR))
-        cv2.waitKey(2)
+        if debug:
+            cv2.imshow("MediaPipe image", cv2.cvtColor(color, cv2.COLOR_RGB2BGR))
+            cv2.waitKey(2)
 
         recognized_hands = []
         landmarks = []
