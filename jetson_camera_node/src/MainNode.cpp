@@ -270,7 +270,7 @@ int main(int argc, char** argv) // TODO Petr, please, divide this god-method int
 	ros::Publisher cameraDataPublisher = n.advertise<jetson_camera_node::CameraData>("camera_data", 1);
 
 	RSCamera::Init();
-    RSCamera::Start(CAM_DESC::RS_30_640_480, CAM_DESC::RS_30_640_480); // RS_30_640_480
+    RSCamera::Start(CAM_DESC::RS_30_424_240, CAM_DESC::RS_30_424_240); // RS_30_640_480
 
 	InitCalibTool();
 	Mat calibWin(10,500,CV_8UC3,Scalar(0,0,0));
@@ -333,6 +333,7 @@ int main(int argc, char** argv) // TODO Petr, please, divide this god-method int
 		//cam.SetView(Aruco::GetViewMatrix());
 		//std::cout <<  " fov   " << RSCamera::GetVFov() * 180.0/pi << std::endl;
 
+		
 		RSCamera::GetDepthImage(source);
 		Clock::update();
         //std::cout << (int)(Clock::getDeltaSec() * 1000) << " [ms], ->    " << 1.0 / Clock::getDeltaSec() << " [fps]  calib>" << manual_calibration << std::endl; //; // << " ,    " << 1.f / delta << " " << std::endl;
@@ -443,9 +444,9 @@ int main(int argc, char** argv) // TODO Petr, please, divide this god-method int
 		vector<Vec3> voxelsInScene;
 		voxelsInScene.reserve(voxels.size());
 
-
 		Mat rgbImg;
 		RSCamera::GetRGBImage(rgbImg, false);
+		//RSCamera::GetDepthImage(source);
 		auto msg = CreateCameraDataMsg(rgbImg, source.ToOpenCV(), m, RSCamera::GetCameraInfo(), RSCamera::GetScale());
 		cameraDataPublisher.publish(msg);
 
@@ -458,7 +459,7 @@ int main(int argc, char** argv) // TODO Petr, please, divide this god-method int
 		OctoMap::AlignToMap3(voxelsInScene, indexedVoxelsHesh, voxelSize, percentageVoxelOccupancy, camPos, m.GetUnitZ());
 
 		jetson_camera_node::PointCloud data_message;
-        	//data_message.request.array = indexedVoxelsHesh;
+		//data_message.request.array = indexedVoxelsHesh;
 
 		for(auto& voxel : voxelTimeStamp)
 		{
@@ -518,7 +519,9 @@ int main(int argc, char** argv) // TODO Petr, please, divide this god-method int
 		}
 
 		auto depth_cv = mask.ToOpenCV();
-		imshow("depth_", depth_cv);
+		//imshow("Depth mask", depth_cv);
+		imshow("Depth", source.ToOpenCV());
+		imshow("RGB", rgbImg);
 
 		if(manual_calibration)
 		{
