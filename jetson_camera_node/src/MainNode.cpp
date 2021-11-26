@@ -444,11 +444,14 @@ int main(int argc, char** argv) // TODO Petr, please, divide this god-method int
 		vector<Vec3> voxelsInScene;
 		voxelsInScene.reserve(voxels.size());
 
-		Mat rgbImg;
-		RSCamera::GetRGBImage(rgbImg, false);
-		//RSCamera::GetDepthImage(source);
-		auto msg = CreateCameraDataMsg(rgbImg, source.ToOpenCV(), m, RSCamera::GetCameraInfo(), RSCamera::GetScale());
+		Mat cvRgbImg;
+		RSCamera::GetRGBImage(cvRgbImg, false);
+		RSCamera::GetDepthImage(source); // for some reason this is the only way to get sync frames
+		Mat cvDepthImg = source.ToOpenCV();
+		auto msg = CreateCameraDataMsg(cvRgbImg, cvDepthImg, m, RSCamera::GetCameraInfo(), RSCamera::GetScale());
 		cameraDataPublisher.publish(msg);
+		imshow("Depth", cvDepthImg);
+		imshow("RGB", cvRgbImg);
 
 		OctoMap::TransformAndCheckWithBoundingBox(voxels, voxelsInScene, boundingBox, m);
 
@@ -520,8 +523,7 @@ int main(int argc, char** argv) // TODO Petr, please, divide this god-method int
 
 		auto depth_cv = mask.ToOpenCV();
 		//imshow("Depth mask", depth_cv);
-		imshow("Depth", source.ToOpenCV());
-		imshow("RGB", rgbImg);
+
 
 		if(manual_calibration)
 		{
