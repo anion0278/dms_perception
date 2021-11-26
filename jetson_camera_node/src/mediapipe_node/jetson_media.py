@@ -35,12 +35,13 @@ class MPRecognizer:
         landmarks = []
         for i in range(len(hand_coordinates)):
             if hand_coordinates[i] is not None:  
-                color_img_pixel = [np.clip(int(hand_coordinates[i][0]), 0, color.shape[1] - 1), 
-                                np.clip(int(hand_coordinates[i][1]), 0, color.shape[0] - 1)]
+                color_img_pixel = [np.clip(hand_coordinates[i][0], 0, color.shape[1] - 1), 
+                                np.clip(hand_coordinates[i][1], 0, color.shape[0] - 1)]
                 depth_value = depth[color_img_pixel[1], color_img_pixel[0]]
                 if i == 8:
                     depth_tf = cv2.cvtColor((depth * 255).astype("uint8"), cv2.COLOR_GRAY2RGB)
-                    cv2.circle(depth_tf, color_img_pixel, 2, (255,0,0), thickness=2, lineType=8, shift=0)
+                    cv2.circle(depth_tf, color_img_pixel, 2, (255,255,0), thickness=2, lineType=8, shift=0)
+                    cv2.circle(color, color_img_pixel, 2, (255,255,0), thickness=2, lineType=8, shift=0)
                     stack = np.concatenate((cv2.cvtColor(color, cv2.COLOR_RGB2BGR), depth_tf), axis=1)
                     cv2.imshow("Processed RGB + depth", stack)
                     cv2.waitKey(2)
