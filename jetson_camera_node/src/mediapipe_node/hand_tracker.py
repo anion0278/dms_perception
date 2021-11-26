@@ -18,7 +18,7 @@ from jetson_camera_node.msg import CameraData, HandData, MultiHandData
 class HandRecognizer():
     def __init__(self):
         rospy.init_node("hand_tracker")
-        self.recognizer = jm.MPRecognizer(debug = False)
+        self.recognizer = jm.MPRecognizer(debug = True)
         self.subscriber = rospy.Subscriber("camera_data", CameraData, self.__process_topic_data)
         self.hands_pub = rospy.Publisher(rospy.get_name() + config.hands_data_topic, MultiHandData, queue_size = 1)
 
