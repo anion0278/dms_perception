@@ -3,13 +3,21 @@ import cv2
 import mediapipe as mp
 import pyrealsense2 as rs
 import hand_data as hd
+import csv
+from model import KeyPointClassifier #tensorflow https://docs.nvidia.com/deeplearning/frameworks/install-tf-jetson-platform/index.html
 
 class MPRecognizer:
     def __init__(self,model_complexity = 0,max_num_hands = 2,min_detection_confidence = 0.5,min_tracking_confidence = 0.5,debug = False):
         self.mp_drawing = mp.solutions.drawing_utils
         self.mp_hands = mp.solutions.hands
         self.hands = self.mp_hands.Hands(True,max_num_hands,min_detection_confidence,min_tracking_confidence)
+        self.kc = KeyPointClassifier()
         self.debug = debug
+
+        if self.debug:   
+            with open('/home/k354jn1/catkin_ws/src/dms_perception/jetson_camera_node/src/mediapipe_node/model/keypoint_classifier/keypoint_classifier_label.csv',encoding='utf-8-sig') as f:
+                self.keypoint_classifier_labels = csv.reader(f)
+                self.keypoint_classifier_labels = [row[0] for row in self.keypoint_classifier_labels]
 
     def __recognize(self,image):
         height,width,_ = image.shape
@@ -41,12 +49,16 @@ class MPRecognizer:
             def norm(n):
                 return n/max_value
 
-            normalized_relative_landmarks = list(map(norm,relative_landmarks))    
+            normalized_relative_landmarks = list(map(norm,relative_landmarks))
+
+            gesture = self.kc(normalized_relative_landmarks)
+            hand.gest = gesture  
         return hands
 
 
     def recognize_hand(self,color,depth,intrinsics,scale,extrinsics):
         hands = self.__recognize(color)
+        hands = self.__recognize_gestures(hands)
         
         if self.debug:
             depth_tf = cv2.cvtColor((depth * 255).astype("uint8"), cv2.COLOR_GRAY2RGB)
@@ -67,6 +79,7 @@ class MPRecognizer:
                         if i == 8:
                             cv2.circle(depth_tf, color_pixel, 2, (255,255,0), thickness=2, lineType=8, shift=0)
                             cv2.circle(color, color_pixel, 2, (255,255,0), thickness=2, lineType=8, shift=0)
+                            cv2.putText(color,self.keypoint_classifier_labels[hand.gest],color_pixel,cv2.FONT_HERSHEY_SIMPLEX,0.6,(255,255,255),1,cv2.LINE_AA)
                 else:
                     landmarks.append([0,0,0]) # if landmark is not recognized it still needs to be published
             recognized_hands.append([landmarks,hand.gest])
