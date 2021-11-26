@@ -18,7 +18,7 @@ from jetson_camera_node.msg import CameraData, HandData, MultiHandData
 class HandRecognizer():
     def __init__(self):
         rospy.init_node("hand_tracker")
-        self.recognizer = jm.MPRecognizer()
+        self.recognizer = jm.MPRecognizer(debug = False)
         self.subscriber = rospy.Subscriber("camera_data", CameraData, self.__process_topic_data)
         self.hands_pub = rospy.Publisher(rospy.get_name() + config.hands_data_topic, MultiHandData, queue_size = 1)
 
@@ -35,7 +35,7 @@ class HandRecognizer():
         intrinsics = self.__get_intrinsics(cameraData.cameraInfo)
         extrinsics = self.__get_extrinsics(cameraData.extRotationMatrix, cameraData.extTranslationVector)
         scale = cameraData.depthScale
-        recognized_hands = self.recognizer.recognize_hand(cv_color_img, cv_depth_img, intrinsics, scale, extrinsics, debug = False)
+        recognized_hands = self.recognizer.recognize_hand(cv_color_img, cv_depth_img, intrinsics, scale, extrinsics)
         self.__publish_hands(recognized_hands)
 
     def __publish_hands(self, recognized_hands_list):
