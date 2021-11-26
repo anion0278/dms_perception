@@ -19,13 +19,14 @@ struct Camera_DESC
 	int frameRate = 0;
 };
 
-enum CAM_DESC
+enum CAM_DESC // this is absolutely useless, because the actual params are stored in a completely different place
 {
 	RS_30_1280_720,
 	RS_30_640_480,
 	RS_60_640_480,
 	RS_90_256_144,
 	RS_30_320_240,
+	RS_30_424_240,
 };
 
 
@@ -56,7 +57,6 @@ public: // Why everything is static???, why the whole class is used as static?? 
 
 private:
 	static void Task();
-	static void RgbTask();
 	//static void Lock();
 
 	//static void DepthTask();
@@ -66,12 +66,14 @@ private:
 
 	inline static Matrix depth_to_rgb;
 
+
 	inline static void SetDepthFrameWithLock();
 	static std::atomic<bool> isRunning;
 	inline static bool m_connected_camera = false;
 	inline static rs2::pipeline_profile profile;
 	inline static rs2::pipeline pipe;
 	inline static rs2::frameset m_frame;
+	inline static std::shared_ptr<rs2::align> framesAlignment;
 	inline static rs2::frame m_depth_frame;
 	inline static rs2::frame m_rgb_frame;
 	inline static cv::Mat rgb_image;

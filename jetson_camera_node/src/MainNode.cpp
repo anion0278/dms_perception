@@ -57,7 +57,7 @@ std::unordered_map<uint32_t, float> voxelTimeStamp;
 
 float deltaTimeFilter = 0.0f;
 
-bool SaveToFile(const std::string& name, float value)
+bool SaveToFile(const std::string& name, float value) // again, why all the methods are "static" ? why there is no encapsulating object
 {
 	std::ofstream file(name, std::ios::binary);
 	if(file.is_open())
@@ -126,9 +126,8 @@ void GetIP()
 }
 void NewPointPerVoxel(const std_msgs::Int32::ConstPtr& msg)
 {
-
-pointPerVoxel = (int)msg->data;
-std::cout << "new pointPerVoxel " << pointPerVoxel << std::endl;
+	pointPerVoxel = (int)msg->data;
+	std::cout << "new pointPerVoxel " << pointPerVoxel << std::endl;
 }
 
 bool manual_calibration = false;
@@ -230,28 +229,48 @@ void InitCalibTool()
 	setTrackbarPos("beta",calibWinName, 0);
 	setTrackbarPos("gama",calibWinName, 0);
 
-	setTrackbarPos("alfa_base",calibWinName, 0);
+	setTrackbarPos("alfa_base",calibWinName, 0); 
 	setTrackbarPos("beta_base",calibWinName, 0);
 	setTrackbarPos("deltaFilter",calibWinName, 1000);
 	
 }
 
-int main(int argc, char** argv)
+jetson_camera_node::CameraData CreateCameraDataMsg(
+	Mat cvRgbImage, Mat cvDepthImage, 
+	Matrix cameraToRobotExtrinsics, 
+	sensor_msgs::CameraInfo camInfo, 
+	float depthScale)
+{
+	jetson_camera_node::CameraData camData;
+	camData.depth = *cv_bridge::CvImage(std_msgs::Header(), "mono8", cvDepthImage).toImageMsg();
+	camData.color = *cv_bridge::CvImage(std_msgs::Header(), "rgb8", cvRgbImage).toImageMsg();
+	camData.cameraInfo = camInfo;
+	camData.depthScale = depthScale;
+
+	Matrix m = cameraToRobotExtrinsics; // just for comfort of use
+	std::vector<float> rotation{ m.m[0][0], m.m[0][1], m.m[0][2], m.m[1][0], m.m[1][1], m.m[1][2], m.m[2][0], m.m[2][1], m.m[2][2] };
+	camData.extRotationMatrix = rotation;
+
+	std::vector<float> translation{ m.m[3][0], m.m[3][1], m.m[3][2]};
+	camData.extTranslationVector = translation;
+
+	return camData;
+}
+
+int main(int argc, char** argv) // TODO Petr, please, divide this god-method into some methods
 {
 	GetIP();
    	ros::init(argc, argv, "cam_data_processor_" + id);
-    	ros::NodeHandle n;
+	ros::NodeHandle n;
 	ros::ServiceClient clientInit = n.serviceClient<jetson_camera_node::pcSubscribe>("sub");
 	ros::ServiceClient clientData = n.serviceClient<jetson_camera_node::PointCloud>("data");
 	//ros::Subscriber sub = n.subscribe("pointPerVoxel",1000, NewPointPerVoxel);
 	UdpServer server;
 	
-	//ros::Publisher depthPublisher = n.advertise<sensor_msgs::Image>("camera_depth_image", 1);
-	//ros::Publisher rgbPublisher = n.advertise<sensor_msgs::Image>("camera_rgb_image", 1);
 	ros::Publisher cameraDataPublisher = n.advertise<jetson_camera_node::CameraData>("camera_data", 1);
 
 	RSCamera::Init();
-    RSCamera::Start(CAM_DESC::RS_30_320_240, CAM_DESC::RS_30_640_480); // RS_30_640_480
+    RSCamera::Start(CAM_DESC::RS_30_640_480, CAM_DESC::RS_30_640_480); // RS_30_640_480
 
 	InitCalibTool();
 	Mat calibWin(10,500,CV_8UC3,Scalar(0,0,0));
@@ -425,23 +444,10 @@ int main(int argc, char** argv)
 		voxelsInScene.reserve(voxels.size());
 
 
-
 		Mat rgbImg;
 		RSCamera::GetRGBImage(rgbImg, false);
-		jetson_camera_node::CameraData camData;
-		camData.depth = *cv_bridge::CvImage(std_msgs::Header(), "mono8", source.ToOpenCV()).toImageMsg();
-		camData.color = *cv_bridge::CvImage(std_msgs::Header(), "rgb8", rgbImg).toImageMsg();
-		camData.cameraInfo = RSCamera::GetCameraInfo();
-		camData.depthScale = RSCamera::GetScale();
-
-		std::vector<float> rot{ m.m[0][0], m.m[0][1], m.m[0][2], m.m[1][0], m.m[1][1], m.m[1][2], m.m[2][0], m.m[2][1], m.m[2][2] };
-		camData.extRotationMatrix = rot;
-
-		std::vector<float> tr{ m.m[3][0], m.m[3][1], m.m[3][2]};
-		camData.extTranslationVector = tr;
-
-		cameraDataPublisher.publish(camData);
-
+		auto msg = CreateCameraDataMsg(rgbImg, source.ToOpenCV(), m, RSCamera::GetCameraInfo(), RSCamera::GetScale());
+		cameraDataPublisher.publish(msg);
 
 		OctoMap::TransformAndCheckWithBoundingBox(voxels, voxelsInScene, boundingBox, m);
 
@@ -542,4 +548,3 @@ int main(int argc, char** argv)
 	//destroyAllWindows();
 
 }
-

@@ -54,12 +54,6 @@ class MPRecognizer:
         if len(landmarks) > 0:
             gesture = 1
             recognized_hands.append([landmarks, gesture])
-            
         return recognized_hands
-
-    
-
-
-
 
 

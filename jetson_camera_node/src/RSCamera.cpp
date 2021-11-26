@@ -18,25 +18,29 @@ void RSCamera::Init()
 {
 	isRunning = false;
 	Camera_DESC desc;
-	desc.frameRate = 30;
-	desc.resH = 720;
+	desc.frameRate = 30;   // desc is completely useless. its better to replace it by predefined instances of Camera_DESC class
 	desc.resW = 1280;
+	desc.resH = 720;
 	descs.push_back(desc);
 	desc.frameRate = 30;
-	desc.resH = 480;
 	desc.resW = 640;
+	desc.resH = 480;
 	descs.push_back(desc);
 	desc.frameRate = 60;
-	desc.resH = 480;
 	desc.resW = 640;
+	desc.resH = 480;
 	descs.push_back(desc);
 	desc.frameRate = 90;
-	desc.resH = 144;
 	desc.resW = 256;
+	desc.resH = 144;
 	descs.push_back(desc);
 	desc.frameRate = 30;
-	desc.resH = 240;
 	desc.resW = 320;
+	desc.resH = 240;
+	descs.push_back(desc);
+	desc.frameRate = 30;
+	desc.resW = 424;
+	desc.resH = 240;
 	descs.push_back(desc);
 }
 
@@ -148,6 +152,9 @@ void RSCamera::Start(CAM_DESC rgb, CAM_DESC depth)
 		m_scale = ds.get_depth_scale();
 
 		m_frame = pipe.wait_for_frames();
+
+		framesAlignment = std::make_shared<rs2::align>(RS2_STREAM_COLOR);
+
 		SetDepthFrameWithLock();
 		m_intrin = rs2::video_stream_profile(m_depth_frame.get_profile()).get_intrinsics();
 		
@@ -175,7 +182,6 @@ void RSCamera::Start(CAM_DESC rgb, CAM_DESC depth)
 	isRunning = true;
 	//m_frame = pipe.wait_for_frames();
 	m_thread_wait_for_frame = std::thread(Task);
-        //m_thread_rgb_processing = std::thread(RgbTask);
 }
 
 void RSCamera::Joint()
@@ -209,33 +215,12 @@ void RSCamera::ProjectDepthToPointCloud(const Image<float>& depth, const Image<b
 	}
 }
 
-
-
 void RSCamera::Task()
 {
 	while (isRunning && m_connected_camera)
 	{
-                //cv::Mat img;
-                //GetRGBImage(img);
 		m_frame = pipe.wait_for_frames();
 		SetDepthFrameWithLock();
-	}
-}
-
-
-void RSCamera::RgbTask()
-{
-	//std::cout<< "rgb task start   " << std::endl;
-	while (isRunning)
-	{
-		//std::cout<< "rgb task  "<< m_connected_camera << std::endl;
-		if (m_connected_camera and m_rgb_frame != NULL)
-		{
-			//std::cout<< "rgb lock  " << std::endl;
-			//Lock();
-			//Sleep(10);
-			std::this_thread::sleep_for(1000ms);
-		}
 	}
 }
 
@@ -253,6 +238,7 @@ inline void RSCamera::SetDepthFrameWithLock()
 {
 	{
 		std::lock_guard<std::mutex> guard(depth_lock);
+		m_frame = framesAlignment->process(m_frame);
 		m_depth_frame = m_frame.get_depth_frame();
 	}
 	std::lock_guard<std::mutex> guard_rgb(rgb_lock);
