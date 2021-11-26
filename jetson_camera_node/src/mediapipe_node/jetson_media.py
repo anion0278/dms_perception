@@ -38,10 +38,10 @@ class MPRecognizer:
         landmarks = []
 
         for hand in hands:
-            for i in range(len(hand.pos)):
-                if hand.pos[i] is not None: #nechapu proc by mel byt none ale byva
-                    color_pixel = [hand.pos[i][0],hand.pos[i][1]]
-                    depth_value = depth[hand.pos[i][1],hand.pos[i][0]]
+            for i,landmark in enumerate(hand.landmark):
+                if landmark is not None: #nechapu proc by mel byt none ale byva
+                    color_pixel = [landmark[0],landmark[1]]
+                    depth_value = depth[landmark[1],landmark[0]]
                     point_rel_to_camera = rs.rs2_deproject_pixel_to_point(intrinsics, color_pixel, depth_value)
                     point_rel_to_robot = rs.rs2_transform_point_to_point(extrinsics,point_rel_to_camera)
                     landmarks.append(point_rel_to_robot)
