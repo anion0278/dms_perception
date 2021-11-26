@@ -12,21 +12,38 @@ class MPRecognizer:
         self.debug = debug
 
     def __recognize(self,image):
-        width,height,_ = image.shape
+        height,width,_ = image.shape
         result = self.hands.process(image)
         hands = []
         if result.multi_hand_landmarks is not None:
             for landmarks,handedness in zip(result.multi_hand_landmarks,result.multi_handedness):
                 hand_coordinates = []
                 for landmark in landmarks.landmark:
-                    x = np.clip(landmark.x,0,width - 1)     #clip!
-                    y = np.clip(landmark.y,0,height - 1)
-                    hand_coordinates.append(self.mp_drawing._normalized_to_pixel_coordinates(x,y,height,width))
+                    x = min(int(landmark.x * width),width - 1)     #clip shora bez numpy (zaporne snad neni)
+                    y = min(int(landmark.y * height),height - 1)
+                    hand_coordinates.append((x,y))
                 side = handedness.classification[0].label
                 confidence = handedness.classification[0].score
                 hand = hd.HandData(hand_coordinates,side,confidence)
                 hands.append(hand)
         return hands
+    
+    def __recognize_gestures(self,hands):
+        for hand in hands:
+            relative_landmarks = []
+            base_x = hand.landmark[0][0]
+            base_y = hand.landmark[0][1]
+            for landmark in hand.landmark:
+                relative_landmarks.append(landmark[0]-base_x)
+                relative_landmarks.append(landmark[1]-base_y)
+            max_value = max(list(map(abs,relative_landmarks)))
+
+            def norm(n):
+                return n/max_value
+
+            normalized_relative_landmarks = list(map(norm,relative_landmarks))    
+        return hands
+
 
     def recognize_hand(self,color,depth,intrinsics,scale,extrinsics):
         hands = self.__recognize(color)
