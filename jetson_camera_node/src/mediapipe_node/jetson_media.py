@@ -2,48 +2,35 @@ import numpy as np
 import cv2
 import mediapipe as mp
 import pyrealsense2 as rs
+import hand_data as hd
 
 class MPRecognizer:
-    def __init__(self,model_complexity = 0,max_num_hands = 1,min_detection_confidence = 0.5,min_tracking_confidence = 0.5,debug = False):
+    def __init__(self,model_complexity = 0,max_num_hands = 2,min_detection_confidence = 0.5,min_tracking_confidence = 0.5,debug = False):
         self.mp_drawing = mp.solutions.drawing_utils
         self.mp_hands = mp.solutions.hands
         self.hands = self.mp_hands.Hands(True,max_num_hands,min_detection_confidence,min_tracking_confidence)
         self.debug = debug
 
     def __recognize(self,image):
-        self.width,self.height,_ = image.shape
-        self.result = self.hands.process(image)
-        return self.result
-
-
-    def get_hand_coordinates(self,hand):
-        hand_coordinates = []
-        if self.result.multi_hand_landmarks:
-            landmarks = self.result.multi_hand_landmarks[hand].landmark
-            for landmark in landmarks:
-                x = np.clip(landmark.x,0,self.width - 1)     #clip!
-                y = np.clip(landmark.y,0,self.height - 1)
-                hand_coordinates.append(self.mp_drawing._normalized_to_pixel_coordinates(x,y,self.height,self.width))
-        else:
-            for i in range(21):
-                hand_coordinates.append((0,0))
-        return hand_coordinates
-    
-    def get_hands_coordinates(self):
-        hands_coordinates = []
-        if self.result.multi_hand_landmarks:
-            for hand in range(len(self.result.multi_hand_landmarks)):
-                hand_coordinates = self.get_hand_coordinates(hand)
-                hands_coordinates.append(hand_coordinates)
-        else:
-            hand_coordinates = self.get_hand_coordinates(0)
-            hands_coordinates.append(hand_coordinates)
-        return hands_coordinates
-
+        width,height,_ = image.shape
+        result = self.hands.process(image)
+        hands = []
+        if result.multi_hand_landmarks is not None:
+            hand_coordinates = []
+            for landmarks,handedness in zip(result.multi_hand_landmarks,result.multi_handedness):
+                for landmark in landmarks.landmark:
+                    x = np.clip(landmark.x,0,width - 1)     #clip!
+                    y = np.clip(landmark.y,0,height - 1)
+                    hand_coordinates.append(self.mp_drawing._normalized_to_pixel_coordinates(x,y,height,width))
+                side = handedness.classification[0].label
+                confidence = handedness.classification[0].score
+                hand = hd.HandData(hand_coordinates,side,confidence)
+                hands.append(hand)
+        return hands
 
     def recognize_hand(self,color,depth,intrinsics,scale,extrinsics):
         self.__recognize(color)
-        hand_coordinates = self.get_hand_coordinates(0)
+        
 
         if self.debug:
             cv2.imshow("MediaPipe image", cv2.cvtColor(color, cv2.COLOR_RGB2BGR))
