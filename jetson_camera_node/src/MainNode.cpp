@@ -257,6 +257,22 @@ jetson_camera_node::CameraData CreateCameraDataMsg(
 	return camData;
 }
 
+void PublishCameraData(ros::Publisher rosCameraDataPublisher, Matrix cameraToRobotExtrinsics, bool isVisualizationEnabled = true)
+{
+	Mat cvRgbImg;
+	RSCamera::GetRGBImage(cvRgbImg, false); // TODO check if image already has been recieved during "manual_calibration"
+	Image<float> alignedDepth(RSCamera::GetDepthDesc().resW, RSCamera::GetDepthDesc().resH, 0);
+	RSCamera::GetAlignedDepthImage(alignedDepth); 
+	Mat cvDepthImg = alignedDepth.ToOpenCV();
+	auto msg = CreateCameraDataMsg(cvRgbImg, cvDepthImg, cameraToRobotExtrinsics, RSCamera::GetCameraInfo(), RSCamera::GetScale());
+	rosCameraDataPublisher.publish(msg);
+	if (isVisualizationEnabled)
+	{
+		imshow("Aligned Depth", cvDepthImg);
+		imshow("RGB", cvRgbImg);
+	}
+}
+
 int main(int argc, char** argv) // TODO Petr, please, divide this god-method into some methods
 {
 	GetIP();
@@ -332,8 +348,6 @@ int main(int argc, char** argv) // TODO Petr, please, divide this god-method int
 		//RSCamera::Lock(rgb_img);
 		//cam.SetView(Aruco::GetViewMatrix());
 		//std::cout <<  " fov   " << RSCamera::GetVFov() * 180.0/pi << std::endl;
-
-		
 		RSCamera::GetDepthImage(source);
 		Clock::update();
         //std::cout << (int)(Clock::getDeltaSec() * 1000) << " [ms], ->    " << 1.0 / Clock::getDeltaSec() << " [fps]  calib>" << manual_calibration << std::endl; //; // << " ,    " << 1.f / delta << " " << std::endl;
@@ -444,14 +458,7 @@ int main(int argc, char** argv) // TODO Petr, please, divide this god-method int
 		vector<Vec3> voxelsInScene;
 		voxelsInScene.reserve(voxels.size());
 
-		Mat cvRgbImg;
-		RSCamera::GetRGBImage(cvRgbImg, false);
-		RSCamera::GetDepthImage(source); // for some reason this is the only way to get sync frames
-		Mat cvDepthImg = source.ToOpenCV();
-		auto msg = CreateCameraDataMsg(cvRgbImg, cvDepthImg, m, RSCamera::GetCameraInfo(), RSCamera::GetScale());
-		cameraDataPublisher.publish(msg);
-		imshow("Depth", cvDepthImg);
-		imshow("RGB", cvRgbImg);
+		PublishCameraData(cameraDataPublisher, m, true);
 
 		OctoMap::TransformAndCheckWithBoundingBox(voxels, voxelsInScene, boundingBox, m);
 

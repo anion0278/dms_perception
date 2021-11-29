@@ -37,6 +37,7 @@ public: // Why everything is static???, why the whole class is used as static?? 
 	static void Init();
 	static void GetRGBImage(cv::Mat& image, bool detectAruco);
 	static void GetDepthImage(Image<float>& image);
+	static void GetAlignedDepthImage(Image<float>& image);
 	static void Start(CAM_DESC rgb, CAM_DESC depth);
 
 	static void Joint();
@@ -74,7 +75,8 @@ private:
 	inline static rs2::pipeline pipe;
 	inline static rs2::frameset m_frame;
 	inline static std::shared_ptr<rs2::align> framesAlignment;
-	inline static rs2::frame m_depth_frame;
+	inline static rs2::frame m_depth_frame; // Why snake_case?
+	inline static rs2::frame alignedDepthFrame;
 	inline static rs2::frame m_rgb_frame;
 	inline static cv::Mat rgb_image;
 	inline static float m_scale = 0;

@@ -68,6 +68,15 @@ void RSCamera::GetDepthImage(Image<float>& image)
 		printf("COULD NOT READ FROM CAMERA !");
 }
 
+void RSCamera::GetAlignedDepthImage(Image<float>& image)
+{
+	std::lock_guard<std::mutex> guard(depth_lock);
+	if (m_depth_frame != NULL)
+		image.FillFromCamera((void*)(alignedDepthFrame.get_data()), m_scale);
+	else
+		printf("COULD NOT READ FROM CAMERA !");
+}
+
 sensor_msgs::CameraInfo RSCamera::GetCameraInfo()
 {
 	// from https://github.com/IntelRealSense/realsense-ros/blob/f400d682beee6c216052a419f419e95b797255ad/realsense2_camera/src/base_realsense_node.cpp#L1883
@@ -238,8 +247,9 @@ inline void RSCamera::SetDepthFrameWithLock()
 {
 	{
 		std::lock_guard<std::mutex> guard(depth_lock);
-		m_frame = framesAlignment->process(m_frame);
 		m_depth_frame = m_frame.get_depth_frame();
+		m_frame = framesAlignment->process(m_frame);
+		alignedDepthFrame = m_frame.get_depth_frame();
 	}
 	std::lock_guard<std::mutex> guard_rgb(rgb_lock);
 	m_rgb_frame = m_frame.get_color_frame();
