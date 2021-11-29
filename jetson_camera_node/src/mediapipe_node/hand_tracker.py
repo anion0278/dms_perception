@@ -45,8 +45,8 @@ class HandRecognizer():
         for hand in recognized_hands_list:
             hand_msg = HandData() 
             hand_msg.handSide = config.HandSide.LEFT.value
-            hand_msg.gestureType = hand[1]
-            landmarks = hand[0]
+            hand_msg.gestureType = hand.gest
+            landmarks = hand.pos3D
             for i in range(len(landmarks)):
                 xyz_point = landmarks[i]
                 hand_msg.landmarks.append(Point(x=xyz_point[0],y=xyz_point[1],z=xyz_point[1]))

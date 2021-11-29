@@ -15,80 +15,73 @@ class MPRecognizer:
         self.debug = debug
 
         if self.debug:   
-            with open('/home/k354jn1/catkin_ws/src/dms_perception/jetson_camera_node/src/mediapipe_node/model/keypoint_classifier/keypoint_classifier_label.csv',encoding='utf-8-sig') as f:
-                self.keypoint_classifier_labels = csv.reader(f)
-                self.keypoint_classifier_labels = [row[0] for row in self.keypoint_classifier_labels]
+            self.keypoint_classifier_labels = ["Open","Close","Pointer","OK"]
+            
 
-    def __recognize(self,image):
+    def __recognize(self,image,depth,intrinsics,scale,extrinsics):
         height,width,_ = image.shape
         result = self.hands.process(image)
         hands = []
+
         if result.multi_hand_landmarks is not None:
             for landmarks,handedness in zip(result.multi_hand_landmarks,result.multi_handedness):
                 hand_coordinates = []
+                hand_3Dcoordinates = []
+                relative_landmarks = []
+                base = self.__clip(landmarks.landmark[0].x, landmarks.landmark[0].y,width,height)
+
+                #landmark coordinates
                 for landmark in landmarks.landmark:
-                    x = min(int(landmark.x * width),width - 1)     #clip shora bez numpy (zaporne snad neni)
-                    y = min(int(landmark.y * height),height - 1)
+                    #upper clip
+                    (x,y) = self.__clip(landmark.x, landmark.y,width,height)
+                    relative_landmarks.append(x-base[0])
+                    relative_landmarks.append(y-base[1])
                     hand_coordinates.append((x,y))
+                    #3D coordinates
+                    depth_value = depth[y,x]
+                    pos3D = self.__get_depth_in_WCS(x,y,depth_value,intrinsics,scale,extrinsics)
+                    hand_3Dcoordinates.append(pos3D)
+
+                #normalized relative coordinates for gesture recognition
+                max_value = max(list(map(abs,relative_landmarks)))
+                normalized_relative_landmarks = list(map(lambda n: n/max_value,relative_landmarks))    
+                #hand additional info
                 side = handedness.classification[0].label
                 confidence = handedness.classification[0].score
-                hand = hd.HandData(hand_coordinates,side,confidence)
+                gesture = self.kc(normalized_relative_landmarks)
+
+                hand = hd.HandData(hand_coordinates,hand_3Dcoordinates,side,confidence,gesture)
                 hands.append(hand)
         return hands
-    
-    def __recognize_gestures(self,hands):
-        for hand in hands:
-            relative_landmarks = []
-            base_x = hand.landmark[0][0]
-            base_y = hand.landmark[0][1]
-            for landmark in hand.landmark:
-                relative_landmarks.append(landmark[0]-base_x)
-                relative_landmarks.append(landmark[1]-base_y)
-            max_value = max(list(map(abs,relative_landmarks)))
 
-            def norm(n):
-                return n/max_value
+    def __clip(self,x,y,width,height):
+        cx = min(int(x*width),width-1)
+        cy = min(int(y*height),height-1)
+        return cx,cy
 
-            normalized_relative_landmarks = list(map(norm,relative_landmarks))
-
-            gesture = self.kc(normalized_relative_landmarks)
-            hand.gest = gesture  
-        return hands
-
+    def __get_depth_in_WCS(self,x,y,depth_value,intrinsics,scale,extrinsics):
+        point_rel_to_camera = rs.rs2_deproject_pixel_to_point(intrinsics, (x,y), depth_value) #depth value multiply with scale!!
+        (x3D,y3D,z3D) = rs.rs2_transform_point_to_point(extrinsics,point_rel_to_camera)
+        return x3D,y3D,z3D
 
     def recognize_hand(self,color,depth,intrinsics,scale,extrinsics):
-        hands = self.__recognize(color)
-        hands = self.__recognize_gestures(hands)
+        hands = self.__recognize(color,depth,intrinsics,scale,extrinsics)
         
         if self.debug:
             depth_tf = cv2.cvtColor((depth * 255).astype("uint8"), cv2.COLOR_GRAY2RGB)
-
-        recognized_hands = []
-        landmarks = []
-
+        
         for hand in hands:
-            for i,landmark in enumerate(hand.landmark):
-                if landmark is not None: #nechapu proc by mel byt none ale byva
-                    color_pixel = [landmark[0],landmark[1]]
-                    depth_value = depth[landmark[1],landmark[0]]
-                    point_rel_to_camera = rs.rs2_deproject_pixel_to_point(intrinsics, color_pixel, depth_value)
-                    point_rel_to_robot = rs.rs2_transform_point_to_point(extrinsics,point_rel_to_camera)
-                    landmarks.append(point_rel_to_robot)
-
-                    if self.debug:
-                        if i == 8:
-                            cv2.circle(depth_tf, color_pixel, 2, (255,255,0), thickness=2, lineType=8, shift=0)
-                            cv2.circle(color, color_pixel, 2, (255,255,0), thickness=2, lineType=8, shift=0)
-                            cv2.putText(color,self.keypoint_classifier_labels[hand.gest],color_pixel,cv2.FONT_HERSHEY_SIMPLEX,0.6,(255,255,255),1,cv2.LINE_AA)
-                else:
-                    landmarks.append([0,0,0]) # if landmark is not recognized it still needs to be published
-            recognized_hands.append([landmarks,hand.gest])
+            if self.debug:
+                index_point = hand.landmark[8]
+                cv2.circle(depth_tf, index_point, 2, (255,255,0), thickness=2, lineType=8, shift=0)
+                cv2.circle(color, index_point, 2, (255,255,0), thickness=2, lineType=8, shift=0)
+                cv2.putText(color,self.keypoint_classifier_labels[hand.gest],index_point,cv2.FONT_HERSHEY_SIMPLEX,0.6,(255,255,255),1,cv2.LINE_AA)
        
         if self.debug:
             stack = np.concatenate((cv2.cvtColor(color, cv2.COLOR_RGB2BGR), depth_tf), axis=1)
             cv2.imshow("Processed RGB + depth", stack)
             cv2.waitKey(2)
             #print("depth: %s" % depth_value)
-        return recognized_hands
+        return hands
 
 
