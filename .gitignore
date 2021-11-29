@@ -3,3 +3,7 @@ jetson_camera_node/src/mediapipe_node/config.pyc
 jetson_camera_node/src/master_node/__pycache__/udp.cpython-36.pyc
 jetson_camera_node/src/mediapipe_node/__pycache__/jetson_media.cpython-36.pyc
 jetson_camera_node/src/mediapipe_node/__pycache__/rs_utils2.cpython-36.pyc
+jetson_camera_node/src/mediapipe_node/model/point_history_classifier/__pycache__/point_history_classifier.cpython-36.pyc
+jetson_camera_node/src/mediapipe_node/__pycache__/hand_data.cpython-36.pyc
+jetson_camera_node/src/mediapipe_node/model/__pycache__/__init__.cpython-36.pyc
+jetson_camera_node/src/mediapipe_node/model/keypoint_classifier/__pycache__/keypoint_classifier.cpython-36.pyc

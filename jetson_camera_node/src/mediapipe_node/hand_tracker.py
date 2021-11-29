@@ -13,19 +13,23 @@ from sensor_msgs.msg import Image
 from geometry_msgs.msg import Point
 from jetson_camera_node.srv import ImageRec, ImageRecRequest, ImageRecResponse
 from jetson_camera_node.msg import CameraData, HandData, MultiHandData
+from pympler.asizeof import asizeof
 
+ros_cam_data_msg_size = 421248
 
 class HandRecognizer():
     def __init__(self):
         rospy.init_node("hand_tracker")
         self.recognizer = jm.MPRecognizer(debug = True)
-        self.subscriber = rospy.Subscriber("camera_data", CameraData, self.__process_topic_data)
+        self.subscriber = rospy.Subscriber("camera_data", CameraData, self.__process_topic_data, queue_size = 1, 
+                                            buff_size= ros_cam_data_msg_size * 2) # fixes latency problem: https://answers.ros.org/question/220502/image-subscriber-lag-despite-queue-1/
         self.hands_pub = rospy.Publisher(rospy.get_name() + config.hands_data_topic, MultiHandData, queue_size = 1)
 
     def run(self):
         rospy.spin()
 
     def __process_topic_data(self, cameraData):
+        #print("Size of ROS message (min buff size): " + str(asizeof(cameraData))) # currently 421248
         cv_color_img = ros_numpy.numpify(cameraData.color)
         cv_depth_img = cv2.resize(ros_numpy.numpify(cameraData.depth), (cv_color_img.shape[1], cv_color_img.shape[0]))
         #cv2.imshow(
