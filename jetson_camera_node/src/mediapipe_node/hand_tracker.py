@@ -24,10 +24,11 @@ class HandRecognizer():
 
     def run(self):
         rospy.spin()
-
     def __process_topic_data(self, cameraData):
         cv_color_img = ros_numpy.numpify(cameraData.color)
         cv_depth_img = cv2.resize(ros_numpy.numpify(cameraData.depth), (cv_color_img.shape[1], cv_color_img.shape[0]))
+        cv_color_img = cv2.flip(cv_color_img,1)
+        cv_depth_img = cv2.flip(cv_depth_img,1)
         #cv2.imshow(
         #    "Processed RGB image", 
         #    np.concatenate((cv2.cvtColor(cv_color_img, cv2.COLOR_RGB2BGR), cv2.cvtColor(cv_depth_img, cv2.COLOR_GRAY2RGB)),
@@ -44,7 +45,7 @@ class HandRecognizer():
         multi_hand_msg = MultiHandData()
         for hand in recognized_hands_list:
             hand_msg = HandData() 
-            hand_msg.handSide = config.HandSide.LEFT.value
+            hand_msg.handSide = hand.side
             hand_msg.gestureType = hand.gest
             landmarks = hand.pos3D
             for i in range(len(landmarks)):

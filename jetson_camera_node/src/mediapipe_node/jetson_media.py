@@ -11,7 +11,7 @@ class MPRecognizer:
         self.mp_drawing = mp.solutions.drawing_utils
         self.mp_hands = mp.solutions.hands
         self.hands = self.mp_hands.Hands(True,max_num_hands,min_detection_confidence,min_tracking_confidence)
-        self.kc = KeyPointClassifier()
+        self.keypoint_clasifier = KeyPointClassifier()
         self.debug = debug
 
         if self.debug:   
@@ -28,14 +28,14 @@ class MPRecognizer:
                 hand_coordinates = []
                 hand_3Dcoordinates = []
                 relative_landmarks = []
-                base = self.__clip(landmarks.landmark[0].x, landmarks.landmark[0].y,width,height)
+                hand_base_point = self.__clip(landmarks.landmark[0].x, landmarks.landmark[0].y,width,height)
 
                 #landmark coordinates
                 for landmark in landmarks.landmark:
                     #upper clip
                     (x,y) = self.__clip(landmark.x, landmark.y,width,height)
-                    relative_landmarks.append(x-base[0])
-                    relative_landmarks.append(y-base[1])
+                    relative_landmarks.append(x-hand_base_point[0])
+                    relative_landmarks.append(y-hand_base_point[1])
                     hand_coordinates.append((x,y))
                     #3D coordinates
                     depth_value = depth[y,x]
@@ -48,7 +48,7 @@ class MPRecognizer:
                 #hand additional info
                 side = handedness.classification[0].label
                 confidence = handedness.classification[0].score
-                gesture = self.kc(normalized_relative_landmarks)
+                gesture = self.keypoint_clasifier(normalized_relative_landmarks)
 
                 hand = hd.HandData(hand_coordinates,hand_3Dcoordinates,side,confidence,gesture)
                 hands.append(hand)
@@ -70,14 +70,12 @@ class MPRecognizer:
         if self.debug:
             depth_tf = cv2.cvtColor((depth * 255).astype("uint8"), cv2.COLOR_GRAY2RGB)
         
-        for hand in hands:
-            if self.debug:
+            for hand in hands:
                 index_point = hand.landmark[8]
                 cv2.circle(depth_tf, index_point, 2, (255,255,0), thickness=2, lineType=8, shift=0)
                 cv2.circle(color, index_point, 2, (255,255,0), thickness=2, lineType=8, shift=0)
-                cv2.putText(color,self.keypoint_classifier_labels[hand.gest],index_point,cv2.FONT_HERSHEY_SIMPLEX,0.6,(255,255,255),1,cv2.LINE_AA)
-       
-        if self.debug:
+                #cv2.putText(color,self.keypoint_classifier_labels[hand.gest],index_point,cv2.FONT_HERSHEY_SIMPLEX,0.6,(255,255,255),1,cv2.LINE_AA)
+                cv2.putText(color,hand.side.name,index_point,cv2.FONT_HERSHEY_SIMPLEX,0.6,(255,255,255),1,cv2.LINE_AA)
             stack = np.concatenate((cv2.cvtColor(color, cv2.COLOR_RGB2BGR), depth_tf), axis=1)
             cv2.imshow("Processed RGB + depth", stack)
             cv2.waitKey(2)
