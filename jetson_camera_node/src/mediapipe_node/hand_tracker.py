@@ -31,8 +31,6 @@ class HandRecognizer():
         #print("Size of ROS message (min buff size): " + str(asizeof(cameraData))) # currently 421248
         cv_color_img = ros_numpy.numpify(cameraData.color)
         cv_depth_img = cv2.resize(ros_numpy.numpify(cameraData.depth), (cv_color_img.shape[1], cv_color_img.shape[0]))
-        cv_color_img = cv2.flip(cv_color_img,1)
-        cv_depth_img = cv2.flip(cv_depth_img,1)
         #cv2.imshow(
         #    "Processed RGB image", 
         #    np.concatenate((cv2.cvtColor(cv_color_img, cv2.COLOR_RGB2BGR), cv2.cvtColor(cv_depth_img, cv2.COLOR_GRAY2RGB)),
@@ -49,12 +47,12 @@ class HandRecognizer():
         multi_hand_msg = MultiHandData()
         for hand in recognized_hands_list:
             hand_msg = HandData() 
-            hand_msg.handSide = hand.side
+            hand_msg.handSide = hand.side.value
             hand_msg.gestureType = hand.gest
             landmarks = hand.pos3D
             for i in range(len(landmarks)):
                 xyz_point = landmarks[i]
-                hand_msg.landmarks.append(Point(x=xyz_point[0],y=xyz_point[1],z=xyz_point[1]))
+                hand_msg.landmarks.append(Point(x=xyz_point[0],y=xyz_point[1],z=xyz_point[2]))
             multi_hand_msg.recognizedHands.append(hand_msg)
         self.hands_pub.publish(multi_hand_msg)
         
@@ -65,7 +63,7 @@ class HandRecognizer():
         intrinsics.ppx = camera_info_msg.K[2]
         intrinsics.ppy = camera_info_msg.K[5]
         intrinsics.fx = camera_info_msg.K[0]
-        intrinsics.fy = camera_info_msg.K[4]
+        intrinsics.fy = camera_info_msg.K[4] 
         intrinsics.model = rs.distortion.brown_conrady
         intrinsics.coeffs = [i for i in camera_info_msg.D]
         return intrinsics
@@ -74,10 +72,8 @@ class HandRecognizer():
         extrinsics = rs.extrinsics()
         extrinsics.rotation = extrinsics_rotation
         extrinsics.translation = extrinsics_translation
-        #extrinsics.rotation = [-1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,-1.0]
-        #extrinsics.translation = [0.0,-0.37,0.94]
-        extrinsics.rotation = [1.0,0.0,0.0,0.0,-1.0,0.0,0.0,0.0,-1.0]
-        extrinsics.translation = [0.062,-0.37,0.94]
+        print("Rotation %s" % extrinsics.rotation)
+        print("Translation %s" % extrinsics.translation)
         return extrinsics
 
 if __name__ == '__main__':

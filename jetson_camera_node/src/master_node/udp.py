@@ -17,7 +17,8 @@ class UDPClient:
 class MainPcCommunication():
     def __init__(self):
         #self.udp_com = UDPClient("192.168.0.2", 4023)
-        self.udp_com = UDPClient("169.254.59.148", 4023)
+        #self.udp_com = UDPClient("169.254.59.148", 4023)
+        self.udp_com = UDPClient("192.168.1.20", 4023) # UCR - PO PC
     
     def send_hand_data(self, hand_data):
         udp_msg = hand_data[0] 

@@ -6,7 +6,7 @@ class HandData():
         self.landmark = landmark
         self.pos3D = pos3D
         self.side = {"Left":c.HandSide.LEFT,"Right":c.HandSide.RIGHT}.get(side,c.HandSide.UNKNOWN)
-        self.gest = gest
+        self.gest = int(gest)
         self.confidence = confidence
     
     def get_aggregated_depth(self):
