@@ -11,7 +11,7 @@ void Robot::Init()
 	Object j4;
 	Object j5;
 	Object j6;
-        string source = "/home/jetson/Desktop/DMS_01/ur3_poly/";// "D:\\Dokumenty\\SW\\NAS4\\cameraPkg\\src\\camera\\GraphicsPkg\\STLDatabase\\ur10\\";
+        string source = "/home/k354jn1/catkin_ws/src/dms_perception/jetson_camera_node/src/ur3_poly/";// "D:\\Dokumenty\\SW\\NAS4\\cameraPkg\\src\\camera\\GraphicsPkg\\STLDatabase\\ur10\\";
 	//string source = "/home/jetson/Desktop/DMS_01/ur10_low/";
 /*
         j0.Load(source + "ur10_joint0.stl",0.001);
