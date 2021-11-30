@@ -268,8 +268,11 @@ void PublishCameraData(ros::Publisher rosCameraDataPublisher, Matrix cameraToRob
 	rosCameraDataPublisher.publish(msg);
 	if (isVisualizationEnabled)
 	{
-		imshow("Aligned Depth", cvDepthImg);
-		imshow("RGB", cvRgbImg);
+		//imshow("Aligned Depth", cvDepthImg);
+		cv::cvtColor(cvRgbImg, cvRgbImg, cv::COLOR_BGR2RGB);
+		cv::cvtColor(cvDepthImg, cvDepthImg, cv::COLOR_GRAY2RGB);
+		hconcat(cvRgbImg, cvDepthImg, cvRgbImg);
+		imshow("RGB and aligned Depth", cvRgbImg);
 	}
 }
 
@@ -286,7 +289,7 @@ int main(int argc, char** argv) // TODO Petr, please, divide this god-method int
 	ros::Publisher cameraDataPublisher = n.advertise<jetson_camera_node::CameraData>("camera_data", 1);
 
 	RSCamera::Init();
-    RSCamera::Start(CAM_DESC::RS_30_424_240, CAM_DESC::RS_30_424_240); // RS_30_640_480
+    RSCamera::Start(CAM_DESC::RS_30_424_240);
 
 	InitCalibTool();
 	Mat calibWin(10,500,CV_8UC3,Scalar(0,0,0));
@@ -416,7 +419,8 @@ int main(int argc, char** argv) // TODO Petr, please, divide this god-method int
 			Engine::TransformMeshPerspectiveDivide(mesh, full);
 
 			Engine::BackFaceCull(mesh);
-			Engine::ViewportScale(mesh, RSCamera::GetDepthDesc().resH, RSCamera::GetDepthDesc().resW);
+			Engine::ViewportScale(mesh, RSCamera::GetDepthDesc().resH, RSCamera::GetDepthDesc().resW); 
+			// RSCamera::GetDepthDesc() is used everywhere, why dont you get a single instance and use it everywhere???
 			if(i >= start_j && i <= end_j  )
 				Engine::BuildDepthMap(mesh, RSCamera::GetDepthDesc().resH, RSCamera::GetDepthDesc().resW, depth);
 

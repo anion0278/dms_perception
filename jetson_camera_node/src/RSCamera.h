@@ -38,14 +38,13 @@ public: // Why everything is static???, why the whole class is used as static?? 
 	static void GetRGBImage(cv::Mat& image, bool detectAruco);
 	static void GetDepthImage(Image<float>& image);
 	static void GetAlignedDepthImage(Image<float>& image);
-	static void Start(CAM_DESC rgb, CAM_DESC depth);
+	static void Start(CAM_DESC camSettingsIndex);
 
 	static void Joint();
 
 	static void ProjectDepthToPointCloud(const Image<float>& depth,const Image<bool>& mask, vector<Vec3>& pc);
 
-	static Camera_DESC GetDepthDesc() { return depth_desc; }
-	static Camera_DESC GetRGBDesc() { return rgb_desc; }
+	static Camera_DESC GetDepthDesc() { return cameraSettings; } 
 	static void Lock(cv::Mat& outputImage);
 	static float GetVFov() { return vFov;}
 
@@ -89,8 +88,7 @@ private:
 
 	inline static rs2_intrinsics m_intrin;
 
-	inline static Camera_DESC depth_desc;
-	inline static Camera_DESC rgb_desc;
+	inline static Camera_DESC cameraSettings;
 
 	inline static vector<Camera_DESC> descs;
 };

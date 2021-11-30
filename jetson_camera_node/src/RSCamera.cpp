@@ -137,10 +137,8 @@ sensor_msgs::CameraInfo RSCamera::GetCameraInfo()
 	return cameraInfo;
 }
 
-void RSCamera::Start(CAM_DESC rgb, CAM_DESC depth)
+void RSCamera::Start(CAM_DESC camSettingsIndex)
 {
-	rgb_desc = descs[(int)rgb];
-	depth_desc = descs[(int)depth];
 	vector<string> serial_numbers;
 	context ctx = context();
 	for (auto&& device : ctx.query_devices())
@@ -151,10 +149,14 @@ void RSCamera::Start(CAM_DESC rgb, CAM_DESC depth)
 	{
 		m_connected_camera = true;
 		pipe = pipeline(ctx);
+
+		cameraSettings = descs[(int)camSettingsIndex];
 		config cfg;
-		cfg.enable_stream(RS2_STREAM_COLOR, -1, rgb_desc.resW, rgb_desc.resH, RS2_FORMAT_RGB8, rgb_desc.frameRate);
-		cfg.enable_stream(RS2_STREAM_DEPTH, depth_desc.resW, depth_desc.resH, RS2_FORMAT_Z16, depth_desc.frameRate);
+		// In order to use Align, both streams must be of the same size
+		cfg.enable_stream(RS2_STREAM_COLOR, -1, cameraSettings.resW, cameraSettings.resH, RS2_FORMAT_RGB8, cameraSettings.frameRate);
+		cfg.enable_stream(RS2_STREAM_DEPTH, cameraSettings.resW, cameraSettings.resH, RS2_FORMAT_Z16, cameraSettings.frameRate);
 		cfg.enable_device(serial_numbers[0]);
+
 		profile = pipe.start(cfg);
 		device dev = profile.get_device();
 		depth_sensor ds = dev.query_sensors().front().as<depth_sensor>();
