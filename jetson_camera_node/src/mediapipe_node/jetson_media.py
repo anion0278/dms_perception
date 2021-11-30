@@ -74,8 +74,8 @@ class MPRecognizer:
                 index_point = hand.landmark[8]
                 cv2.circle(depth_tf, index_point, 2, (255,255,0), thickness=2, lineType=8, shift=0)
                 cv2.circle(color, index_point, 2, (255,255,0), thickness=2, lineType=8, shift=0)
-                #cv2.putText(color,self.keypoint_classifier_labels[hand.gest],index_point,cv2.FONT_HERSHEY_SIMPLEX,0.6,(255,255,255),1,cv2.LINE_AA)
-                cv2.putText(color,hand.side.name,index_point,cv2.FONT_HERSHEY_SIMPLEX,0.6,(255,255,255),1,cv2.LINE_AA)
+                cv2.putText(color,self.keypoint_classifier_labels[hand.gest],index_point,cv2.FONT_HERSHEY_SIMPLEX,0.6,(255,255,255),1,cv2.LINE_AA)
+                #cv2.putText(color,hand.side.name,index_point,cv2.FONT_HERSHEY_SIMPLEX,0.6,(255,255,255),1,cv2.LINE_AA)
             stack = np.concatenate((cv2.cvtColor(color, cv2.COLOR_RGB2BGR), depth_tf), axis=1)
             cv2.imshow("Processed RGB + depth", stack)
             cv2.waitKey(2)
