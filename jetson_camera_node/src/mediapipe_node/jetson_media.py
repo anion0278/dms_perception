@@ -30,6 +30,7 @@ class MPRecognizer:
                 relative_landmarks = []
                 base = self.__clip(landmarks.landmark[0].x, landmarks.landmark[0].y,width,height)
 
+                depth_buffer = []
                 #landmark coordinates
                 for landmark in landmarks.landmark:
                     #upper clip
@@ -38,8 +39,11 @@ class MPRecognizer:
                     relative_landmarks.append(y-base[1])
                     hand_coordinates.append((x,y))
                     #3D coordinates
-                    depth_value = depth[y,x]
-                    pos3D = self.__get_depth_in_WCS(x,y,depth_value,intrinsics,scale,extrinsics)
+                    depth_buffer.append(depth[y,x])
+
+                depth_median = np.median(depth_buffer, axis=0)
+                for x,y in hand_coordinates:
+                    pos3D = self.__get_depth_in_WCS(x,y,depth_median,intrinsics,scale,extrinsics)
                     hand_3Dcoordinates.append(pos3D)
 
                 #normalized relative coordinates for gesture recognition
