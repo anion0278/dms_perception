@@ -1,11 +1,12 @@
 import numpy as np
+import config as c
 
 class HandData():
-    def __init__(self,landmark = np.zeros((21,2)),pos3D = np.zeros((21,3)),side = "Right",confidence = 0.0,gest = 2):
+    def __init__(self,landmark,pos3D,side,confidence,gest):
         self.landmark = landmark
         self.pos3D = pos3D
-        self.side = side
-        self.gest = gest
+        self.side = {"Left":c.HandSide.LEFT,"Right":c.HandSide.RIGHT}.get(side,c.HandSide.UNKNOWN)
+        self.gest = int(gest)
         self.confidence = confidence
     
     def get_aggregated_depth(self):

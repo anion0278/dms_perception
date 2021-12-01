@@ -342,10 +342,10 @@ int main(int argc, char** argv) // TODO Petr, please, divide this god-method int
 	//cam.SetView(Aruco::GetViewMatrix());
 	int keyPress = waitKey(1);
 	Matrix resMat;
-	resMat.LoadFromFile("/home/jetson/Desktop/DMS_01/camPose.bmat");
+	resMat.LoadFromFile("/home/k354jn1/Desktop/camPose.bmat");
 	cam.SetView(resMat);
 	float deltaFilter = 0.12f;
-	LoadFromFile("/home/jetson/Desktop/DMS_01/deltaFilter.bfloat", deltaFilter);
+	LoadFromFile("/home/k354jn1/Desktop/deltaFilter.bfloat", deltaFilter);
 	while (ros::ok() && keyPress !=27)
 	{
 		//RSCamera::Lock(rgb_img);
@@ -389,13 +389,13 @@ int main(int argc, char** argv) // TODO Petr, please, divide this god-method int
 			Matrix::Multiply(mat, mat, rgbToDepthCalibration);
 
 			Matrix::Multiply(resMat,mat,calibManualMat);
-			resMat.SaveToFile("/home/jetson/Desktop/DMS_01/camPose.bmat");
+			resMat.SaveToFile("/home/k354jn1/Desktop/camPose.bmat");
 			cam.SetView(resMat);
 
 			start_j = getTrackbarPos("start_joint",calibWinName);
 			end_j = getTrackbarPos("end_joint",calibWinName);
 			deltaFilter = ( getTrackbarPos("deltaFilter",calibWinName) - 1000)/1000.0;
-			SaveToFile("/home/jetson/Desktop/DMS_01/deltaFilter.bfloat", deltaFilter);
+			SaveToFile("/home/k354jn1/Desktop/deltaFilter.bfloat", deltaFilter);
 		}
 
 		Matrix actual(1.f);
@@ -456,13 +456,12 @@ int main(int argc, char** argv) // TODO Petr, please, divide this god-method int
 
 		Matrix m = cam.GetView(); //Aruco::GetViewMatrix();
 		m.Invert();
+		Matrix::Multiply(m, m, Matrix::BuildRotationZ(-180_deg));
 		m.Print();
 
-		Matrix::Multiply(m, m, Matrix::BuildRotationZ(-180_deg));
+		PublishCameraData(cameraDataPublisher, m, true);
 		vector<Vec3> voxelsInScene;
 		voxelsInScene.reserve(voxels.size());
-
-		PublishCameraData(cameraDataPublisher, m, true);
 
 		OctoMap::TransformAndCheckWithBoundingBox(voxels, voxelsInScene, boundingBox, m);
 
@@ -533,7 +532,7 @@ int main(int argc, char** argv) // TODO Petr, please, divide this god-method int
 		}
 
 		auto depth_cv = mask.ToOpenCV();
-		//imshow("Depth mask", depth_cv);
+		imshow("Depth mask", depth_cv);
 
 
 		if(manual_calibration)
