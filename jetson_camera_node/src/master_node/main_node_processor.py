@@ -9,18 +9,19 @@ from jetson_camera_node.msg import CameraData, HandData, MultiHandData
 import message_filters
 from udp import MainPcCommunication
 from collections import Counter
+import rosnode
  
 class DataAggregateProcessor():
     def __init__(self, node_names):
         rospy.init_node('hand_aggregation_processor')
         self.__init_cam_subs(node_names)
-        self.pc_communication = MainPcCommunication()
+        self.pc_communication = MainPcCommunication("192.168.0.149") #"192.168.1.20" PO
 
     def __init_cam_subs(self, node_names):
         if len(node_names) == 0: ValueError("Check node names!")
         subs = []
-        for jetson_node in node_names:
-            subs.append(message_filters.Subscriber(jetson_node+"/hands_data", MultiHandData, queue_size=1))
+        for node_name in node_names:
+            subs.append(message_filters.Subscriber(node_name + "/hands_data", MultiHandData, queue_size=1))
         self.sync = message_filters.ApproximateTimeSynchronizer(subs, queue_size=1, slop=0.1)
         self.sync.registerCallback(self.on_sync_data)
 
@@ -36,9 +37,9 @@ class DataAggregateProcessor():
         # TVORIT POINT CLOUD
         if len(hands) > 0:
             index_point = ros_numpy.numpify(hands[0].landmarks[8])
-            filtered_hands_data = [[*index_point, float(hands[0].gestureType)]]
+            filtered_hands_data = [*index_point, float(hands[0].gestureType)]
             print(filtered_hands_data)
-            self.pc_communication.send_hand_data(filtered_hands_data)
+            self.pc_communication.send_hand_data(filtered_hands_data, filtered_hands_data)
             return
         print("recieved empty data msg")
         
@@ -60,6 +61,7 @@ class DataAggregateProcessor():
         return handSide, gestureType, landmarksList
 
 if __name__ == "__main__":
-    proc = DataAggregateProcessor(["/hand_tracker"])
+    hand_tracker_nodes = list(filter(lambda t: t.startswith("/hands_tracker"), rosnode.get_node_names()))
+    proc = DataAggregateProcessor(hand_tracker_nodes)
     proc.run()
 

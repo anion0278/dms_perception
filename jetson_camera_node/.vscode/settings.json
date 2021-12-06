@@ -4,5 +4,11 @@
         "/opt/ros/melodic/lib/python2.7/dist-packages",
         "/usr/local/lib",
         "/usr/local/lib/python3.6"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/k354jn1/catkin_ws/devel/lib/python2.7/dist-packages",
+        "/opt/ros/melodic/lib/python2.7/dist-packages",
+        "/usr/local/lib",
+        "/usr/local/lib/python3.6"
     ]
 }

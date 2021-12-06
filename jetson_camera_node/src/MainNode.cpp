@@ -272,7 +272,7 @@ void PublishCameraData(ros::Publisher rosCameraDataPublisher, Matrix cameraToRob
 		cv::cvtColor(cvRgbImg, cvRgbImg, cv::COLOR_BGR2RGB);
 		cv::cvtColor(cvDepthImg, cvDepthImg, cv::COLOR_GRAY2RGB);
 		hconcat(cvRgbImg, cvDepthImg, cvRgbImg);
-		imshow("RGB and aligned Depth", cvRgbImg);
+		imshow("[PO] RGB and aligned Depth", cvRgbImg);
 	}
 }
 
@@ -532,8 +532,7 @@ int main(int argc, char** argv) // TODO Petr, please, divide this god-method int
 		}
 
 		auto depth_cv = mask.ToOpenCV();
-		imshow("Depth mask", depth_cv);
-
+		imshow("[PO] Depth mask", depth_cv);
 
 		if(manual_calibration)
 		{

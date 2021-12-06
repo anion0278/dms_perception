@@ -5,20 +5,15 @@ import mediapipe as mp
 import time
 import rospy
 import config
-import ros_numpy
 from std_msgs.msg import Header
-import numpy as np
-import pyrealsense2 as rs
 from cv_bridge import CvBridge
-from sensor_msgs.msg import Image
 from geometry_msgs.msg import Point
-from jetson_camera_node.srv import ImageRec, ImageRecRequest, ImageRecResponse
 from jetson_camera_node.msg import CameraData, HandData, MultiHandData
 
 
 def get_test_data():
     multi_hand_data = MultiHandData()
-    for hand in range(3):
+    for hand in range(2):
         landmarks = []
         for i in range(21):
             landmarks.append(Point(x=1,y=2,z=3))

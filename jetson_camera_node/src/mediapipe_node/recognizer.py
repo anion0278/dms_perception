@@ -3,7 +3,6 @@ import cv2
 import mediapipe as mp
 import pyrealsense2 as rs
 import hand_data as hd
-import csv
 from model import KeyPointClassifier #tensorflow https://docs.nvidia.com/deeplearning/frameworks/install-tf-jetson-platform/index.html
 
 class MPRecognizer:
@@ -81,7 +80,7 @@ class MPRecognizer:
                 cv2.putText(color,self.keypoint_classifier_labels[hand.gest],index_point,cv2.FONT_HERSHEY_SIMPLEX,0.6,(255,255,255),1,cv2.LINE_AA)
                 #cv2.putText(color,hand.side.name,index_point,cv2.FONT_HERSHEY_SIMPLEX,0.6,(255,255,255),1,cv2.LINE_AA)
             stack = np.concatenate((cv2.cvtColor(color, cv2.COLOR_RGB2BGR), depth_tf), axis=1)
-            cv2.imshow("Processed RGB + depth", stack)
+            cv2.imshow("[AS] Processed RGB + depth", stack)
             cv2.waitKey(2)
             #print("depth: %s" % depth_value)
         return hands

@@ -15,11 +15,9 @@ class UDPClient:
         self.socket.close()
 
 class MainPcCommunication():
-    def __init__(self):
-        #self.udp_com = UDPClient("192.168.0.2", 4023)
-        #self.udp_com = UDPClient("169.254.59.148", 4023)
-        self.udp_com = UDPClient("192.168.1.20", 4023) # UCR - PO PC
+    def __init__(self, ip):
+        self.udp_com = UDPClient(ip, 4023) 
     
-    def send_hand_data(self, hand_data):
-        udp_msg = hand_data[0] 
+    def send_hand_data(self, left_hand_data, right_hand_data):
+        udp_msg = [*left_hand_data, *right_hand_data]
         self.udp_com.send_floats(udp_msg)
