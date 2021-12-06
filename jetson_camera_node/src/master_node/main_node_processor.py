@@ -10,12 +10,18 @@ import message_filters
 from udp import MainPcCommunication
 from collections import Counter
 import rosnode
+import std_msgs.msg
+from sensor_msgs.msg import PointCloud2
+import sensor_msgs.point_cloud2 as pcl2
+from typing import List
  
 class DataAggregateProcessor():
     def __init__(self, node_names):
         rospy.init_node('hand_aggregation_processor')
         self.__init_cam_subs(node_names)
         self.pc_communication = MainPcCommunication("192.168.0.149") #"192.168.1.20" PO
+        self.left_pcl_publisher = rospy.Publisher("hands_point_clouds/left", PointCloud2, queue_size=1)
+        self.right_pcl_publisher = rospy.Publisher("hands_point_clouds/right", PointCloud2, queue_size=1)
 
     def __init_cam_subs(self, node_names):
         if len(node_names) == 0: ValueError("Check node names!")
@@ -32,7 +38,7 @@ class DataAggregateProcessor():
     def run(self):
         rospy.spin()
 
-    def on_sync_data(self, *sensors_msgs):
+    def on_sync_data(self, *sensors_msgs: List[MultiHandData]):
         hands = sensors_msgs[0].recognizedHands
         # TVORIT POINT CLOUD
         if len(hands) > 0:
@@ -43,7 +49,13 @@ class DataAggregateProcessor():
             return
         print("recieved empty data msg")
         
-    def merge_hand_data(self, merge_data_list): # unused for now
+    def create_point_cloud(self, cloud_points: List[List[float]]) -> PointCloud2:
+        header = std_msgs.msg.Header()
+        header.stamp = rospy.Time.now()
+        header.frame_id = "world"
+        return pcl2.create_cloud_xyz32(header, cloud_points)
+    
+    def merge_hand_data(self, merge_data_list: List[HandData]) -> HandData: # unused for now
         gestureTypeList = []
         handSideList = []
         landmarksList = []

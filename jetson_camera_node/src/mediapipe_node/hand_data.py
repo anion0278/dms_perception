@@ -9,5 +9,5 @@ class HandData():
         self.gest = int(gest)
         self.confidence = confidence
     
-    def get_aggregated_depth(self):
-        depth = max(self.pos3D,axis=0)[2]
+    def filter_depth(self):
+        depth = max(self.pos3D, axis=0)[2]

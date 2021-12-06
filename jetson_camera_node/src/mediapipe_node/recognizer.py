@@ -16,34 +16,28 @@ class MPRecognizer:
         if self.debug:   
             self.keypoint_classifier_labels = ["Open","Close","Pointer","OK"]
             
-
-    def __recognize(self,image,depth,intrinsics,scale,extrinsics):
+    def __recognize(self, image, depth, intrinsics, scale: float, extrinsics):
         height,width,_ = image.shape
         result = self.hands.process(image)
         hands = []
 
         if result.multi_hand_landmarks is not None:
             for landmarks,handedness in zip(result.multi_hand_landmarks,result.multi_handedness):
-                hand_coordinates = []
-                hand_3Dcoordinates = []
+                hand_2d_coordinates = []
                 relative_landmarks = []
-                hand_base_point = self.__clip(landmarks.landmark[0].x, landmarks.landmark[0].y,width,height)
+                points_in_cam_frame = []
 
-                depth_buffer = []
-                #landmark coordinates
+                hand_base_point = self.__clip(landmarks.landmark[0].x, landmarks.landmark[0].y,width,height)
                 for landmark in landmarks.landmark:
                     #upper clip
                     (x,y) = self.__clip(landmark.x, landmark.y,width,height)
                     relative_landmarks.append(x-hand_base_point[0])
                     relative_landmarks.append(y-hand_base_point[1])
-                    hand_coordinates.append((x,y))
+                    hand_2d_coordinates.append((x,y))
                     #3D coordinates
-                    depth_buffer.append(depth[y,x])
+                    points_in_cam_frame.append(self.__get_point_in_camera_frame(x,y, depth, intrinsics))
 
-                depth_median = np.median(depth_buffer, axis=0)
-                for x,y in hand_coordinates:
-                    pos3D = self.__get_depth_in_WCS(x,y,depth_median,intrinsics,scale,extrinsics)
-                    hand_3Dcoordinates.append(pos3D)
+                hand_3d_coordinates = self.get_points_in_robot_frame(extrinsics, points_in_cam_frame)
 
                 #normalized relative coordinates for gesture recognition
                 max_value = max(list(map(abs,relative_landmarks)))
@@ -52,20 +46,32 @@ class MPRecognizer:
                 side = handedness.classification[0].label
                 confidence = handedness.classification[0].score
                 gesture = self.keypoint_clasifier(normalized_relative_landmarks)
-
-                hand = hd.HandData(hand_coordinates,hand_3Dcoordinates,side,confidence,gesture)
+                hand = hd.HandData(hand_2d_coordinates,hand_3d_coordinates,side,confidence,gesture)
                 hands.append(hand)
         return hands
+
+    def get_points_in_robot_frame(self, extrinsics, points_in_cam_frame):
+        hand_3d_coordinates = []
+        z_axis_index = 2
+        depth_median = np.median(points_in_cam_frame, axis=1)[z_axis_index] 
+        for point_in_cam_frame in points_in_cam_frame:
+            point_in_robot_frame = self.__get_point_in_robot_frame(extrinsics, z_axis_index, depth_median, point_in_cam_frame)
+            hand_3d_coordinates.append(point_in_robot_frame)
+        return hand_3d_coordinates
+
+    def __get_point_in_robot_frame(self, extrinsics, z_axis_index: int, depth_median: float, point3d):
+        point3d[z_axis_index] = depth_median
+        point_in_robot_frame = rs.rs2_transform_point_to_point(extrinsics, point3d)
+        return point_in_robot_frame
+
+    def __get_point_in_camera_frame(self, x, y, depth_img, intrinsics):
+        depth_in_point = depth_img[y,x] # YX is the correct sequence!
+        return rs.rs2_deproject_pixel_to_point(intrinsics, (x,y), depth_in_point)
 
     def __clip(self,x,y,width,height):
         cx = min(int(x*width),width-1)
         cy = min(int(y*height),height-1)
         return cx,cy
-
-    def __get_depth_in_WCS(self,x,y,depth_value,intrinsics,scale,extrinsics):
-        point_rel_to_camera = rs.rs2_deproject_pixel_to_point(intrinsics, (x,y), depth_value) #depth value multiply with scale!!
-        (x3D,y3D,z3D) = rs.rs2_transform_point_to_point(extrinsics,point_rel_to_camera)
-        return x3D,y3D,z3D
 
     def recognize_hand(self,color,depth,intrinsics,scale,extrinsics):
         hands = self.__recognize(color,depth,intrinsics,scale,extrinsics)
