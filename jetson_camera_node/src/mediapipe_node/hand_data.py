@@ -1,13 +1,18 @@
 import numpy as np
 import config as c
 
-class HandData():
-    def __init__(self,landmark,pos3D,side,confidence,gest):
-        self.landmark = landmark
-        self.pos3D = pos3D
+class Hand():
+    def __init__(self,landmarks_2d,landmarks_3d,side,confidence,gesture):
+        self.landmarks_2d = landmarks_2d
+        self.landmarks_3d = landmarks_3d
         self.side = {"Left":c.HandSide.LEFT,"Right":c.HandSide.RIGHT}.get(side,c.HandSide.UNKNOWN)
-        self.gest = int(gest)
+        self.gesture = int(gesture)
         self.confidence = confidence
+        self.cached_centroid = None 
     
     def filter_depth(self):
-        depth = max(self.pos3D, axis=0)[2]
+        depth = max(self.landmarks_3d, axis=0)[2]
+
+    def update_centroid(self):
+        # all (!) landmarks are always available, because MP assumes their positions even when they are not visible on the camera image  
+        self.cached_centroid = np.median(self.landmarks_3d, axis=0)

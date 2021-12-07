@@ -1,4 +1,4 @@
 geometry_msgs/Point[] landmarks
 int32 gestureType
-int32 handSide
+std_msgs/String handSide
 float64 confidence

@@ -1,5 +1,5 @@
-from enum import Enum
-class HandSide(Enum):
+from enum import IntEnum
+class HandSide(IntEnum):
     UNKNOWN = 0
     RIGHT = 1
     LEFT = 2

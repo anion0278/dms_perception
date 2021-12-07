@@ -3,6 +3,7 @@ import cv2
 import mediapipe as mp
 import pyrealsense2 as rs
 import hand_data as hd
+from typing import List
 from model import KeyPointClassifier #tensorflow https://docs.nvidia.com/deeplearning/frameworks/install-tf-jetson-platform/index.html
 
 class MPRecognizer:
@@ -16,7 +17,7 @@ class MPRecognizer:
         if self.debug:   
             self.keypoint_classifier_labels = ["Open","Close","Pointer","OK"]
             
-    def __recognize(self, image, depth, intrinsics, scale: float, extrinsics):
+    def __recognize(self, image, depth, intrinsics, scale: float, extrinsics) -> List[hd.Hand]:
         height,width,_ = image.shape
         result = self.hands.process(image)
         hands = []
@@ -27,14 +28,14 @@ class MPRecognizer:
                 relative_landmarks = []
                 points_in_cam_frame = []
 
-                hand_base_point = self.__clip(landmarks.landmark[0].x, landmarks.landmark[0].y,width,height)
-                for landmark in landmarks.landmark:
-                    #upper clip
-                    (x,y) = self.__clip(landmark.x, landmark.y,width,height)
+                hand_base_point = self.__upper_clip(landmarks.landmark[0].x, landmarks.landmark[0].y,width,height)
+                
+                # all (!) landmarks are always available, because MP assumes their positions even when they are not visible on the camera image  
+                for landmark in landmarks.landmark: 
+                    (x,y) = self.__upper_clip(landmark.x, landmark.y,width,height)
                     relative_landmarks.append(x-hand_base_point[0])
                     relative_landmarks.append(y-hand_base_point[1])
                     hand_2d_coordinates.append((x,y))
-                    #3D coordinates
                     points_in_cam_frame.append(self.__get_point_in_camera_frame(x,y, depth, intrinsics))
 
                 hand_3d_coordinates = self.get_points_in_robot_frame(extrinsics, points_in_cam_frame)
@@ -46,7 +47,7 @@ class MPRecognizer:
                 side = handedness.classification[0].label
                 confidence = handedness.classification[0].score
                 gesture = self.keypoint_clasifier(normalized_relative_landmarks)
-                hand = hd.HandData(hand_2d_coordinates,hand_3d_coordinates,side,confidence,gesture)
+                hand = hd.Hand(hand_2d_coordinates,hand_3d_coordinates,side,confidence,gesture)
                 hands.append(hand)
         return hands
 
@@ -55,20 +56,16 @@ class MPRecognizer:
         z_axis_index = 2
         depth_median = np.median(points_in_cam_frame, axis=1)[z_axis_index] 
         for point_in_cam_frame in points_in_cam_frame:
-            point_in_robot_frame = self.__get_point_in_robot_frame(extrinsics, z_axis_index, depth_median, point_in_cam_frame)
+            point_in_cam_frame[z_axis_index] = depth_median # set filtered Z value
+            point_in_robot_frame = rs.rs2_transform_point_to_point(extrinsics, point_in_cam_frame)
             hand_3d_coordinates.append(point_in_robot_frame)
         return hand_3d_coordinates
-
-    def __get_point_in_robot_frame(self, extrinsics, z_axis_index: int, depth_median: float, point3d):
-        point3d[z_axis_index] = depth_median
-        point_in_robot_frame = rs.rs2_transform_point_to_point(extrinsics, point3d)
-        return point_in_robot_frame
 
     def __get_point_in_camera_frame(self, x, y, depth_img, intrinsics):
         depth_in_point = depth_img[y,x] # YX is the correct sequence!
         return rs.rs2_deproject_pixel_to_point(intrinsics, (x,y), depth_in_point)
 
-    def __clip(self,x,y,width,height):
+    def __upper_clip(self,x,y,width,height):
         cx = min(int(x*width),width-1)
         cy = min(int(y*height),height-1)
         return cx,cy
@@ -80,10 +77,10 @@ class MPRecognizer:
             depth_tf = cv2.cvtColor((depth * 255).astype("uint8"), cv2.COLOR_GRAY2RGB)
         
             for hand in hands:
-                index_point = hand.landmark[8]
+                index_point = hand.landmarks_2d[8]
                 cv2.circle(depth_tf, index_point, 2, (255,255,0), thickness=2, lineType=8, shift=0)
                 cv2.circle(color, index_point, 2, (255,255,0), thickness=2, lineType=8, shift=0)
-                cv2.putText(color,self.keypoint_classifier_labels[hand.gest],index_point,cv2.FONT_HERSHEY_SIMPLEX,0.6,(255,255,255),1,cv2.LINE_AA)
+                cv2.putText(color,self.keypoint_classifier_labels[hand.gesture],index_point,cv2.FONT_HERSHEY_SIMPLEX,0.6,(255,255,255),1,cv2.LINE_AA)
                 #cv2.putText(color,hand.side.name,index_point,cv2.FONT_HERSHEY_SIMPLEX,0.6,(255,255,255),1,cv2.LINE_AA)
             stack = np.concatenate((cv2.cvtColor(color, cv2.COLOR_RGB2BGR), depth_tf), axis=1)
             cv2.imshow("[AS] Processed RGB + depth", stack)

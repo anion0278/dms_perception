@@ -10,6 +10,9 @@ import recognizer as rec
 from geometry_msgs.msg import Point
 from jetson_camera_node.msg import CameraData, HandData, MultiHandData
 from pympler.asizeof import asizeof
+from std_msgs.msg import String
+from hand_data import Hand
+from typing import List
 
 ros_cam_data_msg_size = 3575480
 
@@ -27,30 +30,21 @@ class HandRecognizer():
     def __process_topic_data(self, cameraData):
         #print("Size of ROS message (min buff size): " + str(asizeof(cameraData))) # currently 421248
         cv_color_img = ros_numpy.numpify(cameraData.color)
-        #cv_depth_img = cv2.resize(ros_numpy.numpify(cameraData.depth), (cv_color_img.shape[1], cv_color_img.shape[0]))
         cv_depth_img = np.array(cameraData.depth,dtype=float).reshape(cv_color_img.shape[0],cv_color_img.shape[1])
-        #cv2.imshow(
-        #    "Processed RGB image", 
-        #    np.concatenate((cv2.cvtColor(cv_color_img, cv2.COLOR_RGB2BGR), cv2.cvtColor(cv_depth_img, cv2.COLOR_GRAY2RGB)),
-        #    axis=1))
-        #cv2.waitKey(2)
-        #cv_depth_img = cv_depth_img / 255.0
         intrinsics = self.__get_intrinsics(cameraData.cameraInfo)
         extrinsics = self.__get_extrinsics(cameraData.extRotationMatrix, cameraData.extTranslationVector)
         scale = cameraData.depthScale
         recognized_hands = self.recognizer.recognize_hand(cv_color_img, cv_depth_img, intrinsics, scale, extrinsics)
         self.__publish_hands(recognized_hands)
 
-    def __publish_hands(self, recognized_hands_list):
+    def __publish_hands(self, recognized_hands_list:List[Hand]):
         multi_hand_msg = MultiHandData()
         for hand in recognized_hands_list:
             hand_msg = HandData() 
-            hand_msg.handSide = hand.side.value
-            hand_msg.gestureType = hand.gest
+            hand_msg.handSide = String(hand.side.name)
+            hand_msg.gestureType = hand.gesture
             hand_msg.confidence = hand.confidence
-            landmarks = hand.pos3D
-            for i in range(len(landmarks)):
-                xyz_point = landmarks[i]
+            for xyz_point in hand.landmarks_3d:
                 hand_msg.landmarks.append(Point(x=xyz_point[0],y=xyz_point[1],z=xyz_point[2]))
             multi_hand_msg.recognizedHands.append(hand_msg)
         self.hands_pub.publish(multi_hand_msg)
