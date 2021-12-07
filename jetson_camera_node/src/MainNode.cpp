@@ -236,13 +236,17 @@ void InitCalibTool()
 }
 
 jetson_camera_node::CameraData CreateCameraDataMsg(
-	Mat cvRgbImage, Mat cvDepthImage, 
+	Mat cvRgbImage, 
+	//Mat cvDepthImage, 
+	float* depth,
 	Matrix cameraToRobotExtrinsics, 
 	sensor_msgs::CameraInfo camInfo, 
 	float depthScale)
 {
+	std::vector<float> depthVec(depth,depth + camInfo.width*camInfo.height);
 	jetson_camera_node::CameraData camData;
-	camData.depth = *cv_bridge::CvImage(std_msgs::Header(), "mono8", cvDepthImage).toImageMsg();
+	//camData.depth = *cv_bridge::CvImage(std_msgs::Header(), "mono8", cvDepthImage).toImageMsg();
+	camData.depth = depthVec;
 	camData.color = *cv_bridge::CvImage(std_msgs::Header(), "rgb8", cvRgbImage).toImageMsg();
 	camData.cameraInfo = camInfo;
 	camData.depthScale = depthScale;
@@ -262,9 +266,11 @@ void PublishCameraData(ros::Publisher rosCameraDataPublisher, Matrix cameraToRob
 	Mat cvRgbImg;
 	RSCamera::GetRGBImage(cvRgbImg, false); // TODO check if image already has been recieved during "manual_calibration"
 	Image<float> alignedDepth(RSCamera::GetDepthDesc().resW, RSCamera::GetDepthDesc().resH, 0);
+	
 	RSCamera::GetAlignedDepthImage(alignedDepth); 
 	Mat cvDepthImg = alignedDepth.ToOpenCV();
-	auto msg = CreateCameraDataMsg(cvRgbImg, cvDepthImg, cameraToRobotExtrinsics, RSCamera::GetCameraInfo(), RSCamera::GetScale());
+	//auto msg = CreateCameraDataMsg(cvRgbImg, cvDepthImg, cameraToRobotExtrinsics, RSCamera::GetCameraInfo(), RSCamera::GetScale());
+	auto msg = CreateCameraDataMsg(cvRgbImg, alignedDepth.GetPtr(), cameraToRobotExtrinsics, RSCamera::GetCameraInfo(), RSCamera::GetScale());
 	rosCameraDataPublisher.publish(msg);
 	if (isVisualizationEnabled)
 	{

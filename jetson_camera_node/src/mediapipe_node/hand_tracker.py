@@ -27,13 +27,14 @@ class HandRecognizer():
     def __process_topic_data(self, cameraData):
         #print("Size of ROS message (min buff size): " + str(asizeof(cameraData))) # currently 421248
         cv_color_img = ros_numpy.numpify(cameraData.color)
-        cv_depth_img = cv2.resize(ros_numpy.numpify(cameraData.depth), (cv_color_img.shape[1], cv_color_img.shape[0]))
+        #cv_depth_img = cv2.resize(ros_numpy.numpify(cameraData.depth), (cv_color_img.shape[1], cv_color_img.shape[0]))
+        cv_depth_img = np.array(cameraData.depth,dtype=float).reshape(cv_color_img.shape[0],cv_color_img.shape[1])
         #cv2.imshow(
         #    "Processed RGB image", 
         #    np.concatenate((cv2.cvtColor(cv_color_img, cv2.COLOR_RGB2BGR), cv2.cvtColor(cv_depth_img, cv2.COLOR_GRAY2RGB)),
         #    axis=1))
         #cv2.waitKey(2)
-        cv_depth_img = cv_depth_img / 255.0
+        #cv_depth_img = cv_depth_img / 255.0
         intrinsics = self.__get_intrinsics(cameraData.cameraInfo)
         extrinsics = self.__get_extrinsics(cameraData.extRotationMatrix, cameraData.extTranslationVector)
         scale = cameraData.depthScale
