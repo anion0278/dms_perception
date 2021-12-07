@@ -11,7 +11,7 @@ from geometry_msgs.msg import Point
 from jetson_camera_node.msg import CameraData, HandData, MultiHandData
 from pympler.asizeof import asizeof
 
-ros_cam_data_msg_size = 421248
+ros_cam_data_msg_size = 3575480
 
 class HandRecognizer():
     def __init__(self):
