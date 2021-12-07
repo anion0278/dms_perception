@@ -13,15 +13,15 @@ from std_msgs.msg import String
 
 def get_test_data():
     multi_hand_data = MultiHandData()
-    for hand in range(2):
+    for hand_index in range(2):
         landmarks = []
         for i in range(21):
-            hand_offset = hand * 0.05
+            hand_offset = hand_index * 0.05
             landmarks.append(Point(x=1 + hand_offset,y=2 + hand_offset,z=3 + hand_offset))
-        gesture = 1
+        gesture = hand_index
         hand_data = HandData() # TODO extract from hand_tracker !!!
         hand_data.landmarks = landmarks
-        hand_data.gestureType = gesture
+        hand_data.gestureType = gesture + 1
         hand_data.handSide = String(config.HandSide.LEFT.name)
         multi_hand_data.recognizedHands.append(hand_data)
         multi_hand_data.header = Header()

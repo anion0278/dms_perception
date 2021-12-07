@@ -45,10 +45,6 @@ class DataAggregateProcessor():
         self.sync = message_filters.ApproximateTimeSynchronizer(subs, queue_size=1, slop=0.1)
         self.sync.registerCallback(self.on_sync_data)
 
-    def __get_most_frequent_category_or_first(self, list):
-        occurence_count = Counter(list)
-        return occurence_count.most_common(1)[0][0]
-
     def run(self):
         rospy.spin()
 
@@ -119,9 +115,7 @@ class DataAggregateProcessor():
 
         # hands should belong to the same side! TODO check
         hand_side = merge_hands[0].side 
-
-        # TODO return gesture of most "confident" hand if all categories have same number of occurences
-        most_common_gesture = self.__get_most_frequent_category_or_first([h.gesture for h in merge_hands])
+        most_common_gesture = self.filter_gesture(merge_hands)
         average_confidence = np.mean([h.confidence for h in merge_hands])
         filtered_landmarks = []
         for i in range(len(merge_hands[0].landmarks_3d)):
@@ -131,6 +125,23 @@ class DataAggregateProcessor():
             filtered_landmarks.append(np.median(singleLandmarkData, axis=0))
 
         return Hand([], filtered_landmarks, hand_side.name.capitalize(), average_confidence, most_common_gesture)
+
+    def filter_gesture(self, hands: List[Hand]): 
+        gestures = [h.gesture for h in hands]
+
+        if len(self.__get_unique_items(gestures)) == len(hands):
+            most_stable_hand = max(hands, key = lambda h:h.confidence)
+            return most_stable_hand.gesture
+
+        # TODO if both multiple gestures have same number of occurences, then select the one with the highest confidence
+        return self.__get_most_frequent_category_or_first(gestures)
+
+    def __get_unique_items(self, gestures):
+        return list(set(gestures))
+
+    def __get_most_frequent_category_or_first(self, list):
+        occurence_count = Counter(list)
+        return occurence_count.most_common(1)[0][0]
 
 def find_all_hand_tracker_nodes():
     return list(filter(lambda t: t.startswith("/"+ config.hands_tracker_node_name), rosnode.get_node_names()))
