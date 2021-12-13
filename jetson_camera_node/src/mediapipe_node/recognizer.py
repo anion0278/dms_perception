@@ -17,9 +17,9 @@ class MPRecognizer:
         if self.debug:   
             self.keypoint_classifier_labels = ["Open","Close","Pointer","OK"]
             
-    def __recognize(self, image, depth, intrinsics, scale: float, extrinsics) -> List[hd.Hand]:
-        height,width,_ = image.shape
-        result = self.hands.process(image)
+    def __recognize(self, cv_rgb_image, cv_depth_image, intrinsics, scale: float, extrinsics) -> List[hd.Hand]:
+        height,width,_ = cv_rgb_image.shape
+        result = self.hands.process(cv_rgb_image)
         hands = []
 
         if result.multi_hand_landmarks is not None:
@@ -36,7 +36,7 @@ class MPRecognizer:
                     relative_landmarks.append(x-hand_base_point[0])
                     relative_landmarks.append(y-hand_base_point[1])
                     hand_2d_coordinates.append((x,y))
-                    points_in_cam_frame.append(self.__get_point_in_camera_frame(x,y, depth, intrinsics))
+                    points_in_cam_frame.append(self.__get_point_in_camera_frame(x,y, cv_depth_image, intrinsics))
 
                 hand_3d_coordinates = self.get_points_in_robot_frame(extrinsics, points_in_cam_frame)
 
@@ -54,7 +54,7 @@ class MPRecognizer:
     def get_points_in_robot_frame(self, extrinsics, points_in_cam_frame):
         hand_3d_coordinates = []
         z_axis_index = 2
-        depth_median = np.median(points_in_cam_frame, axis=1)[z_axis_index] 
+        depth_median = np.median(points_in_cam_frame, axis=0)[z_axis_index] 
         for point_in_cam_frame in points_in_cam_frame:
             point_in_cam_frame[z_axis_index] = depth_median # set filtered Z value
             point_in_robot_frame = rs.rs2_transform_point_to_point(extrinsics, point_in_cam_frame)

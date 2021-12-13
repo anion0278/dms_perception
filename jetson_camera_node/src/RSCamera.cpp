@@ -165,6 +165,8 @@ void RSCamera::Start(CAM_DESC camSettingsIndex)
 		m_frame = pipe.wait_for_frames();
 
 		framesAlignment = std::make_shared<rs2::align>(RS2_STREAM_COLOR);
+		hf_filter = std::make_shared<rs2::hole_filling_filter>();
+		hf_filter->set_option(RS2_OPTION_HOLES_FILL,3);
 
 		SetDepthFrameWithLock();
 		m_intrin = rs2::video_stream_profile(m_depth_frame.get_profile()).get_intrinsics();
@@ -251,6 +253,7 @@ inline void RSCamera::SetDepthFrameWithLock()
 		std::lock_guard<std::mutex> guard(depth_lock);
 		m_depth_frame = m_frame.get_depth_frame();
 		m_frame = framesAlignment->process(m_frame);
+		m_frame = hf_filter->process(m_frame);
 		alignedDepthFrame = m_frame.get_depth_frame();
 	}
 	std::lock_guard<std::mutex> guard_rgb(rgb_lock);

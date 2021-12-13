@@ -292,7 +292,7 @@ int main(int argc, char** argv) // TODO Petr, please, divide this god-method int
 	//ros::Subscriber sub = n.subscribe("pointPerVoxel",1000, NewPointPerVoxel);
 	UdpServer server;
 	
-	ros::Publisher cameraDataPublisher = n.advertise<jetson_camera_node::CameraData>("camera_data", 1);
+	ros::Publisher cameraDataPublisher = n.advertise<jetson_camera_node::CameraData>("camera_data_1", 1);
 
 	RSCamera::Init();
     RSCamera::Start(CAM_DESC::RS_30_424_240);
