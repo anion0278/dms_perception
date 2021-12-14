@@ -13,7 +13,6 @@ from pympler.asizeof import asizeof
 from std_msgs.msg import String
 from hand_data import Hand
 from typing import List
-
 ros_cam_data_msg_size = 3575480
 
 class HandRecognizer():

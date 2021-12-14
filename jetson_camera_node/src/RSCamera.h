@@ -74,6 +74,7 @@ private:
 	inline static rs2::pipeline pipe;
 	inline static rs2::frameset m_frame;
 	inline static std::shared_ptr<rs2::align> framesAlignment;
+	inline static std::shared_ptr<rs2::hole_filling_filter> hf_filter;
 	inline static rs2::frame m_depth_frame; // Why snake_case?
 	inline static rs2::frame alignedDepthFrame;
 	inline static rs2::frame m_rgb_frame;
