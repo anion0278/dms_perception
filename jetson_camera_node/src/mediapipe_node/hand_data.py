@@ -5,7 +5,7 @@ class Hand():
     def __init__(self,landmarks_2d,landmarks_3d,side,confidence,gesture):
         self.landmarks_2d = landmarks_2d
         self.landmarks_3d = landmarks_3d
-        self.side = {"Left":c.HandSide.LEFT,"Right":c.HandSide.RIGHT}.get(side,c.HandSide.UNKNOWN)
+        self.side = side
         self.gesture = int(gesture)
         self.confidence = confidence
         self.cached_centroid = None 

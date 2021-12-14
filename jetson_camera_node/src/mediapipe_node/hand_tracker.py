@@ -64,8 +64,8 @@ class HandRecognizer():
         extrinsics = rs.extrinsics()
         extrinsics.rotation = extrinsics_rotation
         extrinsics.translation = extrinsics_translation
-        print("Rotation %s" % extrinsics.rotation)
-        print("Translation %s" % extrinsics.translation)
+        #print("Rotation %s" % extrinsics.rotation)
+        #print("Translation %s" % extrinsics.translation)
         return extrinsics
 
 if __name__ == '__main__':

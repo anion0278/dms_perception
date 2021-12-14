@@ -93,7 +93,7 @@ class DataAggregateProcessor():
         points3d = []
         for point in hand_data_msg.landmarks:
             points3d.append(ros_numpy.numpify(point))
-        hand = Hand([], points3d, hand_data_msg.handSide.data.capitalize(), hand_data_msg.confidence, hand_data_msg.gestureType)
+        hand = Hand([], points3d, config.HandSide[hand_data_msg.handSide.data.upper()], hand_data_msg.confidence, hand_data_msg.gestureType)
         hand.update_centroid()
         return hand
     

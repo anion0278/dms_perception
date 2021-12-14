@@ -4,6 +4,7 @@ import mediapipe as mp
 import pyrealsense2 as rs
 import hand_data as hd
 from typing import List
+import config as c
 from model import KeyPointClassifier #tensorflow https://docs.nvidia.com/deeplearning/frameworks/install-tf-jetson-platform/index.html
 
 class MPRecognizer:
@@ -48,10 +49,11 @@ class MPRecognizer:
                 max_value = max(list(map(abs,relative_landmarks)))
                 normalized_relative_landmarks = list(map(lambda n: n/max_value,relative_landmarks))    
                 #hand additional info
-                side = handedness.classification[0].label
+                side = {"Right":c.HandSide.LEFT,"Left":c.HandSide.RIGHT}.get(handedness.classification[0].label,c.HandSide.UNKNOWN) 
                 confidence = handedness.classification[0].score
                 gesture = self.keypoint_clasifier(normalized_relative_landmarks)
                 hand = hd.Hand(hand_2d_coordinates,hand_3d_coordinates,side,confidence,gesture)
+                print(hand.side)
                 hands.append(hand)
         return hands
 
