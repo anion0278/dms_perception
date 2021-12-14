@@ -33,7 +33,7 @@ class DataAggregateProcessor():
     def __init__(self, node_names):
         rospy.init_node('hand_aggregation_processor')
         self.__init_subscribers(node_names)
-        self.pc_communication = MainPcCommunication("192.168.0.149") #"192.168.1.20" PO
+        self.pc_communication = MainPcCommunication("192.168.1.20") #"192.168.1.20" PO
         self.left_pcl_publisher = rospy.Publisher("hands_point_clouds/left", PointCloud2, queue_size=1)
         self.right_pcl_publisher = rospy.Publisher("hands_point_clouds/right", PointCloud2, queue_size=1)
 

@@ -1,32 +1,41 @@
-# tried to use BUILD from https://github.com/JetsonHacksNano/installLibrealsense/blob/master/buildLibrealsense.sh
-#sys.path.append("/usr/local/lib/python3.6") # required, otherwise can be solved by https://github.com/IntelRealSense/librealsense/issues/6820#issuecomment-660167748
-import pyrealsense2 as rs
-p = rs.pipeline() 
-pipeline_config = rs.config()
-pipeline_config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
-profile = p.start(pipeline_config)
-fs = p.wait_for_frames()
-df = fs.get_depth_frame() 
+import cv2
+import mediapipe as mp
+mp_drawing = mp.solutions.drawing_utils
+mp_drawing_styles = mp.solutions.drawing_styles
+mp_hands = mp.solutions.hands
 
-# from ROS message https://medium.com/@yasuhirachiba/converting-2d-image-coordinates-to-3d-coordinates-using-ros-intel-realsense-d435-kinect-88621e8e733a
+# For webcam input:
+cap = cv2.VideoCapture(2)
+with mp_hands.Hands(
+    model_complexity=1,
+    min_detection_confidence=0.5,
+    min_tracking_confidence=0.5) as hands:
+  while cap.isOpened():
+    success, image = cap.read()
+    if not success:
+      print("Ignoring empty camera frame.")
+      # If loading a video, use 'break' instead of 'continue'.
+      continue
 
-depth_pixel = [410, 200]
-depth_sensor = profile.get_device().first_depth_sensor()
-depth_scale = depth_sensor.get_depth_scale()
-depth_intrin = profile.get_stream(rs.stream.depth).as_video_stream_profile().intrinsics
-#m_intrin = rs2::video_stream_profile(m_depth_frame.get_profile()).get_intrinsics();
-depth_point = rs.rs2_deproject_pixel_to_point(depth_intrin, depth_pixel, depth_scale)
-#color_point = rs.rs2_transform_point_to_point(depth_to_color_extrin, depth_point)
-#color_pixel = rs.rs2_project_point_to_pixel(color_intrin, color_point)
-#point = rs.rs2_deproject_pixel_to_point(intr,[20, 20],np.asanyarray(df.get_data()))
-#https://github.com/IntelRealSense/librealsense/issues/1231#issuecomment-368421888
+    # To improve performance, optionally mark the image as not writeable to
+    # pass by reference.
+    image.flags.writeable = False
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    results = hands.process(image)
 
-
-x= rs.extrinsics()
-print(x)
-print(type(x))
-pass
-
-
-
-		
+    # Draw the hand annotations on the image.
+    image.flags.writeable = True
+    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+    if results.multi_hand_landmarks:
+      for hand_landmarks in results.multi_hand_landmarks:
+        mp_drawing.draw_landmarks(
+            image,
+            hand_landmarks,
+            mp_hands.HAND_CONNECTIONS,
+            mp_drawing_styles.get_default_hand_landmarks_style(),
+            mp_drawing_styles.get_default_hand_connections_style())
+    # Flip the image horizontally for a selfie-view display.
+    cv2.imshow('MediaPipe Hands', cv2.flip(image, 1))
+    if cv2.waitKey(5) & 0xFF == 27:
+      break
+cap.release()
