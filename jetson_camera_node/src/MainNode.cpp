@@ -556,7 +556,7 @@ int main(int argc, char** argv) // TODO Petr, please, divide this god-method int
 		}
 
  		keyPress = waitKey(1);
-		if(keyPress == 99)
+		if(keyPress == 109)
 		{
 			manual_calibration = !manual_calibration;
 		}
