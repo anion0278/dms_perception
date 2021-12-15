@@ -18,9 +18,9 @@ ros_cam_data_msg_size = 3575480
 class HandRecognizer():
     def __init__(self):
         node_index = 1
-        rospy.init_node(config.hands_tracker_node_name + node_index)
+        rospy.init_node(config.hands_tracker_node_name + str(node_index))
         self.recognizer = rec.MPRecognizer(max_num_hands = 2, debug = True)
-        self.subscriber = rospy.Subscriber("camera_data_" + node_index, CameraData, self.__process_topic_data, queue_size = 1, 
+        self.subscriber = rospy.Subscriber("camera_data_" + str(node_index), CameraData, self.__process_topic_data, queue_size = 1, 
                                             buff_size= ros_cam_data_msg_size * 2) # fixes latency problem: https://answers.ros.org/question/220502/image-subscriber-lag-despite-queue-1/
         self.hands_pub = rospy.Publisher(rospy.get_name() + config.hands_data_topic, MultiHandData, queue_size = 1)
 
