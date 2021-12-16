@@ -53,7 +53,6 @@ class MPRecognizer:
                 confidence = handedness.classification[0].score
                 gesture = self.keypoint_clasifier(normalized_relative_landmarks)
                 hand = hd.Hand(hand_2d_coordinates,hand_3d_coordinates,side,confidence,gesture)
-                print(hand.side)
                 hands.append(hand)
         return hands
 

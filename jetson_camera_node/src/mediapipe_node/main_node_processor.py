@@ -41,8 +41,10 @@ class DataAggregateProcessor():
         if len(node_names) == 0: ValueError("Check node names!")
         subs = []
         for node_name in node_names:
-            subs.append(message_filters.Subscriber(node_name + config.hands_data_topic, MultiHandData, queue_size=1))
-        self.sync = message_filters.ApproximateTimeSynchronizer(subs, queue_size=1, slop=0.1)
+            topic_name = node_name + config.hands_data_topic
+            subs.append(message_filters.Subscriber(topic_name, MultiHandData, queue_size=1))
+            print("Added source topic: %s" % topic_name)
+        self.sync = message_filters.ApproximateTimeSynchronizer(subs, queue_size=1, slop=0.5)
         self.sync.registerCallback(self.on_sync_data)
 
     def run(self):
@@ -72,6 +74,8 @@ class DataAggregateProcessor():
         print("Filtered left hands: %s, Filtered right Hands: %s" % (len(left_hands), len(right_hands)))
 
         self.pc_communication.send_hands(self.merge_hands(left_hands), self.merge_hands(right_hands))
+        self.left_pcl_publisher.publish(self.create_point_cloud(pcl_left))
+        self.right_pcl_publisher.publish(self.create_point_cloud(pcl_right))
 
     def remove_outlier_hands(self, hands: List[Hand]) -> List[Hand]:
         # hands should belong to the same side! TODO check

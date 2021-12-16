@@ -39,6 +39,7 @@ class HandRecognizer():
 
     def __publish_hands(self, recognized_hands_list:List[Hand]):
         multi_hand_msg = MultiHandData()
+        print("============== Recognized hands: ")
         for hand in recognized_hands_list:
             hand_msg = HandData() 
             hand_msg.handSide = String(hand.side.name)
@@ -47,6 +48,7 @@ class HandRecognizer():
             for xyz_point in hand.landmarks_3d:
                 hand_msg.landmarks.append(Point(x=xyz_point[0],y=xyz_point[1],z=xyz_point[2]))
             multi_hand_msg.recognizedHands.append(hand_msg)
+            print("Hand %s %s" % (hand.gesture, hand.side.name))
         self.hands_pub.publish(multi_hand_msg)
         
     def __get_intrinsics(self, camera_info_msg):
