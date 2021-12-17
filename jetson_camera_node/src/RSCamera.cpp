@@ -82,16 +82,17 @@ void RSCamera::GetAlignedDepthImage(Image<float>& image)
 
 sensor_msgs::CameraInfo RSCamera::GetCameraInfo()
 {
+	auto intrinsics = colorIntrinsics; // For Aligned Frames, the color intrinsics is the correct one!
 	// from https://github.com/IntelRealSense/realsense-ros/blob/f400d682beee6c216052a419f419e95b797255ad/realsense2_camera/src/base_realsense_node.cpp#L1883
 	sensor_msgs::CameraInfo cameraInfo;
-	cameraInfo.width = m_intrin.width;
-	cameraInfo.height = m_intrin.height;
+	cameraInfo.width = intrinsics.width;
+	cameraInfo.height = intrinsics.height;
 	cameraInfo.header.frame_id = "camera_frame";
 
-	cameraInfo.K.at(0) = m_intrin.fx;
-	cameraInfo.K.at(2) = m_intrin.ppx;
-	cameraInfo.K.at(4) = m_intrin.fy;
-	cameraInfo.K.at(5) = m_intrin.ppy;
+	cameraInfo.K.at(0) = intrinsics.fx;
+	cameraInfo.K.at(2) = intrinsics.ppx;
+	cameraInfo.K.at(4) = intrinsics.fy;
+	cameraInfo.K.at(5) = intrinsics.ppy;
 	cameraInfo.K.at(8) = 1;
 
 	cameraInfo.P.at(0) = cameraInfo.K.at(0);
@@ -122,10 +123,10 @@ sensor_msgs::CameraInfo RSCamera::GetCameraInfo()
 	cameraInfo.D.resize(coeff_size);
 	for (int i = 0; i < coeff_size; i++)
 	{
-		cameraInfo.D.at(i) = m_intrin.coeffs[i];
+		cameraInfo.D.at(i) = intrinsics.coeffs[i];
 	}
 
-	if (m_intrin.model == RS2_DISTORTION_KANNALA_BRANDT4)
+	if (intrinsics.model == RS2_DISTORTION_KANNALA_BRANDT4)
 	{
 		cameraInfo.distortion_model = "equidistant";
 		coeff_size = 4;
@@ -173,6 +174,7 @@ void RSCamera::Start(CAM_DESC camSettingsIndex)
 
 		SetDepthFrameWithLock();
 		m_intrin = rs2::video_stream_profile(m_depth_frame.get_profile()).get_intrinsics();
+		colorIntrinsics = rs2::video_stream_profile(m_rgb_frame.get_profile()).get_intrinsics();
 		
 		hFov =2* std::atan(m_intrin.width/( 2 * m_intrin.fx));
 		vFov =2* std::atan(m_intrin.height / (2 * m_intrin.fy));

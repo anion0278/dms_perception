@@ -55,14 +55,10 @@ class HandRecognizer():
         intrinsics = rs.intrinsics()
         intrinsics.width = camera_info_msg.width
         intrinsics.height = camera_info_msg.height
-        # intrinsics.ppx = camera_info_msg.K[2]
-        # intrinsics.ppy = camera_info_msg.K[5]
-        intrinsics.ppx = 208.523
-        intrinsics.ppy = 125.334
-        # intrinsics.fx = camera_info_msg.K[0]
-        # intrinsics.fy = camera_info_msg.K[4] 
-        intrinsics.fx = 306.708
-        intrinsics.fy = 306.833 
+        intrinsics.ppx = camera_info_msg.K[2]
+        intrinsics.ppy = camera_info_msg.K[5]
+        intrinsics.fx = camera_info_msg.K[0]
+        intrinsics.fy = camera_info_msg.K[4] 
         intrinsics.model = rs.distortion.brown_conrady
         intrinsics.coeffs = [i for i in camera_info_msg.D]
         return intrinsics
