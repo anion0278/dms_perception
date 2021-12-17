@@ -28,4 +28,6 @@ class MainPcCommunication():
     def __format_hand_data(self, hand: Hand) -> List[float]:
         if hand is None: return [0,0,0,-1] # empty hand TK convention
         index_finger_counter = 8
-        return [*hand.landmarks_3d[index_finger_counter], hand.gesture]
+        hand.update_centroid()
+        # return [*hand.landmarks_3d[index_finger_counter], hand.gesture]
+        return [*hand.cached_centroid, hand.gesture]

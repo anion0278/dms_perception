@@ -9,6 +9,7 @@ class Hand():
         self.gesture = int(gesture)
         self.confidence = confidence
         self.cached_centroid = None 
+        self.cam_index = None
     
     def filter_depth(self):
         depth = max(self.landmarks_3d, axis=0)[2]
