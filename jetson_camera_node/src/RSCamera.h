@@ -88,6 +88,7 @@ private:
 	inline static std::mutex depth_lock;
 
 	inline static rs2_intrinsics m_intrin;
+	inline static rs2_intrinsics colorIntrinsics;
 
 	inline static Camera_DESC cameraSettings;
 

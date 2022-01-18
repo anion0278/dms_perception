@@ -39,6 +39,7 @@ class HandRecognizer():
 
     def __publish_hands(self, recognized_hands_list:List[Hand]):
         multi_hand_msg = MultiHandData()
+        print("============== Recognized hands: ")
         for hand in recognized_hands_list:
             hand_msg = HandData() 
             hand_msg.handSide = String(hand.side.name)
@@ -47,20 +48,17 @@ class HandRecognizer():
             for xyz_point in hand.landmarks_3d:
                 hand_msg.landmarks.append(Point(x=xyz_point[0],y=xyz_point[1],z=xyz_point[2]))
             multi_hand_msg.recognizedHands.append(hand_msg)
+            print("Hand %s %s" % (hand.gesture, hand.side.name))
         self.hands_pub.publish(multi_hand_msg)
         
     def __get_intrinsics(self, camera_info_msg):
         intrinsics = rs.intrinsics()
         intrinsics.width = camera_info_msg.width
         intrinsics.height = camera_info_msg.height
-        # intrinsics.ppx = camera_info_msg.K[2]
-        # intrinsics.ppy = camera_info_msg.K[5]
-        intrinsics.ppx = 208.523
-        intrinsics.ppy = 125.334
-        # intrinsics.fx = camera_info_msg.K[0]
-        # intrinsics.fy = camera_info_msg.K[4] 
-        intrinsics.fx = 306.708
-        intrinsics.fy = 306.833 
+        intrinsics.ppx = camera_info_msg.K[2]
+        intrinsics.ppy = camera_info_msg.K[5]
+        intrinsics.fx = camera_info_msg.K[0]
+        intrinsics.fy = camera_info_msg.K[4] 
         intrinsics.model = rs.distortion.brown_conrady
         intrinsics.coeffs = [i for i in camera_info_msg.D]
         return intrinsics
