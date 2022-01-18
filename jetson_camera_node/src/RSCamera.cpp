@@ -50,9 +50,12 @@ void RSCamera::GetRGBImage(cv::Mat& image, bool detectAruco = true)
 	//cv::Mat image;
 	if (m_rgb_frame != NULL)
 	{
-		const int w = m_rgb_frame.as<video_frame>().get_width();
-		const int h = m_rgb_frame.as<video_frame>().get_height();
-		image = cv::Mat(cv::Size(w, h), CV_8UC3, (void*)m_rgb_frame.get_data(), cv::Mat::AUTO_STEP);
+		{
+			std::lock_guard<std::mutex> guard(rgb_lock);
+			const int w = m_rgb_frame.as<video_frame>().get_width();
+			const int h = m_rgb_frame.as<video_frame>().get_height();
+			image = cv::Mat(cv::Size(w, h), CV_8UC3, (void*)m_rgb_frame.get_data(), cv::Mat::AUTO_STEP);
+		}
 		if (detectAruco)
         	Aruco::Detect(image, image);
 	}
