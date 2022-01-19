@@ -19,7 +19,7 @@ class Robot
 {
 
 public:
-	void Init();
+	void Init(std::string pathToRobotModelDir);
 	void BuilMat(Matrix& source, float d, float a, float fi, float alfa);
 	void BuilMat(Matrix& source, DHParam dh, float actual);
 

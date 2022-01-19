@@ -11,7 +11,7 @@ using std::unordered_map;
 class Aruco
 {
 public:
-	static void Init();
+	static void Init(std::string pathToMatrixCalibration);
 	static void Detect(const cv::Mat& inputImage, cv::Mat& outputImage);
 	static Matrix GetViewMatrix() { std::lock_guard<std::mutex> guard(lock); return view; };
 	static void ManualCalibMatrix(const Matrix& mat){manualCalib = mat;};

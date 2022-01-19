@@ -243,10 +243,11 @@ jetson_camera_node::CameraData CreateCameraDataMsg(
 	sensor_msgs::CameraInfo camInfo, 
 	float depthScale)
 {
-	std::vector<float> depthVec(depth,depth + camInfo.width*camInfo.height);
 	jetson_camera_node::CameraData camData;
-	//camData.depth = *cv_bridge::CvImage(std_msgs::Header(), "mono8", cvDepthImage).toImageMsg();
-	camData.depth = depthVec;
+
+	std::vector<float> depthVec(depth,depth + camInfo.width*camInfo.height);
+	camData.depth = depthVec; // in order to preserve accuracy we send Image as float vec
+
 	camData.color = *cv_bridge::CvImage(std_msgs::Header(), "rgb8", cvRgbImage).toImageMsg();
 	camData.cameraInfo = camInfo;
 	camData.depthScale = depthScale;
@@ -293,20 +294,25 @@ int main(int argc, char** argv) // TODO Petr, please, divide this god-method int
 	bool isDebug;
 	std::string relativePathToCalibrationFiles;
 	std::string thisPackageName = "jetson_camera_node"; // Change if ever package name changes
-	
+	std::string thisPackageFullPath = ros::package::getPath(thisPackageName);
+
 	nh.param("cam_res_width", cameraStreamSettings.resW, 424); // default values
 	nh.param("cam_res_height", cameraStreamSettings.resH, 240);
 	nh.param("cam_rate", cameraStreamSettings.frameRate, 15);
 	nh.param("debug", isDebug, true);
 
 	nh.getParam("calibration_dir", relativePathToCalibrationFiles); // Required parameter (!)
-	relativePathToCalibrationFiles = ros::package::getPath(thisPackageName) + "/" + relativePathToCalibrationFiles + "/"; // TODO multiplatform concatenation
+	relativePathToCalibrationFiles = thisPackageFullPath + "/" + relativePathToCalibrationFiles + "/"; // TODO multiplatform concatenation
 	std::string matrixCalibFilePath = relativePathToCalibrationFiles + "camPose.bmat";
 	std::string deltaFilterCalibFilePath = relativePathToCalibrationFiles + "deltaFilter.bfloat";
+	std::string robotModelPath = thisPackageFullPath + "/src/ur3_poly/";
+	std::string tableModelPath = thisPackageFullPath + "/src/ur10/ws2.STL";
 
 	printf("Looking for calibration at: %s \n", relativePathToCalibrationFiles.c_str());
 	printf("Matrix calibration path: %s \n", matrixCalibFilePath.c_str());
 	printf("Delta calibration path: %s \n", deltaFilterCalibFilePath.c_str());
+	printf("Robot model path: %s \n", robotModelPath.c_str());
+	printf("Table model path: %s \n", tableModelPath.c_str());
 
 
 	ros::ServiceClient clientInit = nh.serviceClient<jetson_camera_node::pcSubscribe>("sub");
@@ -335,18 +341,18 @@ int main(int argc, char** argv) // TODO Petr, please, divide this god-method int
 	Image<float> depth(RSCamera::GetDepthDesc().resW, RSCamera::GetDepthDesc().resH, 20.f);
 	Image<float> source(RSCamera::GetDepthDesc().resW, RSCamera::GetDepthDesc().resH, 20.f);
 
-	Aruco::Init();
+	Aruco::Init(matrixCalibFilePath);
 	Clock::init();
 	OrbitCamera cam;
 	cam.SetProjectionParams(fAspectRatio, fFov, fNear, fFar);
 	cam.SetViewParams(0, 0, 0.3f);
 	Object obj;
 	//Object obj_cube;
-	obj.Load(obj.path_ws_ur3, 0.001f);
+	obj.Load(tableModelPath, 0.001f);
 	//obj_cube.Load("/home/jetson/Desktop/DMS_01/ur3_poly/joint_0", 0.00005f);
 	Matrix view = Matrix(-0.991634, -0.116853, -0.0548485, 0, -0.0145268, 0.523223, -0.852072, 0, 0.128265, -0.844146, -0.520543, 0, -0.10944, 0.359958, 1.84452, 1);
 	Robot rob;
-	rob.Init();
+	rob.Init(robotModelPath); // TODO should be obtained from args
 	float j = 0;
 	int index = 1;
 	//std::array<float, resH* resW> dept_mask;
