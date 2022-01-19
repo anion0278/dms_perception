@@ -90,7 +90,7 @@ bool LoadFromFile(const std::string& name, float& value)
 	}
 }
 
-void GetIP()
+std::string GetIP()
 {
     char ip_address[15];
     int fd;
@@ -117,13 +117,12 @@ void GetIP()
 
     strcpy(ip_address,inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr));
   
-
     std::string ip = ip_address;
     std::replace(ip.begin(),ip.end(),'.','_');
     printf("System IP Address is: %s\n",ip_address);
-    id = ip;
-
+	return ip;
 }
+
 void NewPointPerVoxel(const std_msgs::Int32::ConstPtr& msg)
 {
 	pointPerVoxel = (int)msg->data;
@@ -284,7 +283,7 @@ void PublishCameraData(ros::Publisher rosCameraDataPublisher, Matrix cameraToRob
 
 int main(int argc, char** argv) // TODO Petr, please, divide this god-method into some methods
 {
-	GetIP();
+	id = GetIP();
    	ros::init(argc, argv, "cam_data_processor_" + id);
 	ros::NodeHandle n;
 	ros::ServiceClient clientInit = n.serviceClient<jetson_camera_node::pcSubscribe>("sub");
@@ -292,7 +291,7 @@ int main(int argc, char** argv) // TODO Petr, please, divide this god-method int
 	//ros::Subscriber sub = n.subscribe("pointPerVoxel",1000, NewPointPerVoxel);
 	UdpServer server;
 	
-	ros::Publisher cameraDataPublisher = n.advertise<jetson_camera_node::CameraData>("camera_data_1", 1);
+	ros::Publisher cameraDataPublisher = n.advertise<jetson_camera_node::CameraData>("camera_data_" + id, 1);
 
 	RSCamera::Init();
     RSCamera::Start(CAM_DESC::RS_30_424_240);

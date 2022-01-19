@@ -14,6 +14,7 @@ from std_msgs.msg import String
 from hand_data import Hand
 from typing import List
 import utils_ip as ip
+
 ros_cam_data_msg_size = 3575480
 
 class HandRecognizer():
