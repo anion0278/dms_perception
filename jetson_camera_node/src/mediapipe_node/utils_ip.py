@@ -18,3 +18,4 @@ def get_eth_ip_address():
     except Exception as ex:
         default_ip = "127.0.0.0" # for some reason localhost IP is different on PO side
         print("Could not get IP, setting defaut IP: %s" % default_ip)
+        return default_ip
