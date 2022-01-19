@@ -289,10 +289,11 @@ int main(int argc, char** argv) // TODO Petr, please, divide this god-method int
 	ros::NodeHandle nh("~");
 
 	Camera_DESC cameraStreamSettings;
-	int cameraImageHeight, cameraImageWidth, cameraRate;
+	bool isDebug;
 	nh.param("cam_res_width", cameraStreamSettings.resW, 424); // default values
 	nh.param("cam_res_height", cameraStreamSettings.resH, 240);
 	nh.param("cam_rate", cameraStreamSettings.frameRate, 15);
+	nh.param("debug", isDebug, true);
 
 	ros::ServiceClient clientInit = nh.serviceClient<jetson_camera_node::pcSubscribe>("sub");
 	ros::ServiceClient clientData = nh.serviceClient<jetson_camera_node::PointCloud>("data");
@@ -472,7 +473,7 @@ int main(int argc, char** argv) // TODO Petr, please, divide this god-method int
 		Matrix::Multiply(m, m, Matrix::BuildRotationZ(-180_deg));
 		m.Print();
 
-		PublishCameraData(cameraDataPublisher, m, true);
+		PublishCameraData(cameraDataPublisher, m, isDebug);
 		vector<Vec3> voxelsInScene;
 		voxelsInScene.reserve(voxels.size());
 
@@ -544,8 +545,11 @@ int main(int argc, char** argv) // TODO Petr, please, divide this god-method int
 			std::cout <<"service call error " << std::endl;
 		}
 
-		auto depth_cv = mask.ToOpenCV();
-		imshow("[PO] Depth mask", depth_cv);
+		if (isDebug)
+		{
+			auto depth_cv = mask.ToOpenCV();
+			imshow("[PO] Depth mask", depth_cv);
+		}
 
 		if(manual_calibration)
 		{
