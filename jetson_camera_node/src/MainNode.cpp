@@ -119,7 +119,7 @@ std::string GetIP()
   
     std::string ip = ip_address;
     std::replace(ip.begin(),ip.end(),'.','_');
-    printf("System IP Address is: %s\n",ip_address);
+    printf("System IP Address is: %s\nh",ip_address);
 	return ip;
 }
 
@@ -285,16 +285,24 @@ int main(int argc, char** argv) // TODO Petr, please, divide this god-method int
 {
 	id = GetIP();
    	ros::init(argc, argv, "cam_data_processor_" + id);
-	ros::NodeHandle n;
-	ros::ServiceClient clientInit = n.serviceClient<jetson_camera_node::pcSubscribe>("sub");
-	ros::ServiceClient clientData = n.serviceClient<jetson_camera_node::PointCloud>("data");
-	//ros::Subscriber sub = n.subscribe("pointPerVoxel",1000, NewPointPerVoxel);
+
+	ros::NodeHandle nh("~");
+
+	Camera_DESC cameraStreamSettings;
+	int cameraImageHeight, cameraImageWidth, cameraRate;
+	nh.param("cam_res_width", cameraStreamSettings.resW, 424); // default values
+	nh.param("cam_res_height", cameraStreamSettings.resH, 240);
+	nh.param("cam_rate", cameraStreamSettings.frameRate, 15);
+
+	ros::ServiceClient clientInit = nh.serviceClient<jetson_camera_node::pcSubscribe>("sub");
+	ros::ServiceClient clientData = nh.serviceClient<jetson_camera_node::PointCloud>("data");
+	//ros::Subscriber sub = nh.subscribe("pointPerVoxel",1000, NewPointPerVoxel);
 	UdpServer server;
 	
-	ros::Publisher cameraDataPublisher = n.advertise<jetson_camera_node::CameraData>("camera_data_" + id, 1);
+	ros::Publisher cameraDataPublisher = nh.advertise<jetson_camera_node::CameraData>("camera_data_" + id, 1);
 
 	RSCamera::Init();
-    RSCamera::Start(CAM_DESC::RS_30_424_240);
+    RSCamera::Start(cameraStreamSettings);
 
 	InitCalibTool();
 	Mat calibWin(10,500,CV_8UC3,Scalar(0,0,0));
@@ -306,7 +314,7 @@ int main(int argc, char** argv) // TODO Petr, please, divide this god-method int
 	float fNear = 0.1f;
 	float fFar = 100.f;
 	float fFov = RSCamera::GetVFov();//58_deg; //65_deg;// 55_deg;//41_deg;// 50_deg;
-	float fAspectRatio = (float)RSCamera::GetDepthDesc().resW / (float)RSCamera::GetDepthDesc().resH;
+	float fAspectRatio = (float)RSCamera::GetDepthDesc().resW / (float)RSCamera::GetDepthDesc().resH; // THIS IS REALLY BAD, so many places where the same values are retrieved over and over again. Very complicated for refactoring
 
 	Image<bool> mask(RSCamera::GetDepthDesc().resW, RSCamera::GetDepthDesc().resH, false);
 	Image<float> depth(RSCamera::GetDepthDesc().resW, RSCamera::GetDepthDesc().resH, 20.f);

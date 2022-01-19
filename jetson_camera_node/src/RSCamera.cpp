@@ -141,7 +141,7 @@ sensor_msgs::CameraInfo RSCamera::GetCameraInfo()
 	return cameraInfo;
 }
 
-void RSCamera::Start(CAM_DESC camSettingsIndex)
+void RSCamera::Start(Camera_DESC cameraStreamSettings)
 {
 	vector<string> serial_numbers;
 	context ctx = context();
@@ -154,7 +154,7 @@ void RSCamera::Start(CAM_DESC camSettingsIndex)
 		m_connected_camera = true;
 		pipe = pipeline(ctx);
 
-		cameraSettings = descs[(int)camSettingsIndex];
+		cameraSettings = cameraStreamSettings;
 		config cfg;
 		// In order to use Align, both streams must be of the same size
 		cfg.enable_stream(RS2_STREAM_COLOR, -1, cameraSettings.resW, cameraSettings.resH, RS2_FORMAT_RGB8, cameraSettings.frameRate);

@@ -19,7 +19,7 @@ struct Camera_DESC
 	int frameRate = 0;
 };
 
-enum CAM_DESC // this is absolutely useless, because the actual params are stored in a completely different place
+enum CAM_DESC // this is absolutely useless, because the actual params are stored in a completely different place. EVEN MORE - what about naming??? facepalm
 {
 	RS_30_1280_720,
 	RS_30_640_480,
@@ -38,7 +38,7 @@ public: // Why everything is static???, why the whole class is used as static?? 
 	static void GetRGBImage(cv::Mat& image, bool detectAruco);
 	static void GetDepthImage(Image<float>& image);
 	static void GetAlignedDepthImage(Image<float>& image);
-	static void Start(CAM_DESC camSettingsIndex);
+	static void Start(Camera_DESC cameraStreamSettings);
 
 	static void Joint();
 
