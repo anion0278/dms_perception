@@ -7,3 +7,4 @@ class HandSide(IntEnum):
 hand_recognition_servise = "hand_recognition"
 hands_data_topic = "/hands_data"
 hands_tracker_node_name = "hands_tracker_"
+camera_max_distance = 3.0
