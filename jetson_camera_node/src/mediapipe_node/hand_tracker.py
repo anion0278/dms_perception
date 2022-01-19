@@ -14,15 +14,16 @@ from std_msgs.msg import String
 from hand_data import Hand
 from typing import List
 import utils_ip as ip
+import sys
 
 ros_cam_data_msg_size = 3575480
 
 class HandRecognizer():
-    def __init__(self):
+    def __init__(self, debug = True):
         node_suffix = ip.get_eth_ip_address().replace(".","_")
         rospy.init_node(config.hands_tracker_node_name + str(node_suffix))
         print("Started node: %s" % rospy.get_name())
-        self.recognizer = rec.MPRecognizer(max_num_hands = 2, debug = True)
+        self.recognizer = rec.MPRecognizer(max_num_hands = 2, debug = debug)
         self.subscriber = rospy.Subscriber("camera_data_" + str(node_suffix), CameraData, self.__process_topic_data, queue_size = 1, 
                                             buff_size= ros_cam_data_msg_size * 2) # this fixes latency problem: https://answers.ros.org/question/220502/image-subscriber-lag-despite-queue-1/
         self.hands_pub = rospy.Publisher(rospy.get_name() + config.hands_data_topic, MultiHandData, queue_size = 1)
@@ -77,7 +78,10 @@ class HandRecognizer():
         return extrinsics
 
 if __name__ == '__main__':
-    tracker = HandRecognizer()
+    args_without_ros = rospy.myargv(argv=sys.argv)
+    print(args_without_ros)
+    debug = True if len(args_without_ros) == 2 else False
+    tracker = HandRecognizer(debug)
     tracker.run()
 
 
