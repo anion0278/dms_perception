@@ -68,18 +68,25 @@ class MPRecognizer:
 
     def __get_point_in_camera_frame(self, x, y, depth_img, intrinsics):
         depth_in_point = depth_img[y,x] # YX is the correct sequence!
-        return rs.rs2_deproject_pixel_to_point(intrinsics, (x,y), depth_in_point)
+        return rs.rs2_deproject_pixel_to_point(intrinsics, (x,y), depth_in_point) 
 
     def __upper_clip(self,x,y,width,height):
         cx = min(int(x*width),width-1)
         cy = min(int(y*height),height-1)
         return cx,cy
 
+    def __norm_depth(self,depth):
+        depth[depth>c.camera_max_distance] = c.camera_max_distance #crop to max distance
+        norm = lambda n: n/c.camera_max_distance
+        depth = norm(depth)
+        return (depth*255).astype("uint8")
+
+
     def recognize_hand(self,color,depth,intrinsics,scale,extrinsics):
         hands = self.__recognize(color,depth,intrinsics,scale,extrinsics)
         
         if self.debug:
-            depth_tf = cv2.cvtColor((depth * 255).astype("uint8"), cv2.COLOR_GRAY2RGB)
+            depth_tf = cv2.cvtColor(self.__norm_depth(depth), cv2.COLOR_GRAY2RGB)
         
             for hand in hands:
                 index_point = hand.landmarks_2d[8]
