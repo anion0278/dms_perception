@@ -35,7 +35,7 @@ class DataAggregateProcessor():
     def __init__(self, node_names):
         rospy.init_node('hand_aggregation_processor')
         self.__init_subscribers(node_names)
-        self.pc_communication = MainPcCommunication("192.168.1.20") #"192.168.1.20" PO
+        self.pc_communication = MainPcCommunication("192.168.1.20") 
         self.left_pcl_publisher = rospy.Publisher("hands_point_clouds/left", PointCloud2, queue_size=1)
         self.right_pcl_publisher = rospy.Publisher("hands_point_clouds/right", PointCloud2, queue_size=1)
         # self.tf_pub = tf.TransformBroadcaster()
@@ -106,14 +106,6 @@ class DataAggregateProcessor():
             if not self.__is_outlier(evaluated_hand, hands):
                 filtered_hands.append(evaluated_hand)
         return filtered_hands
-
-    def __is_outlier_old(self,evaluated_hand:Hand, all_hand_projections:List[Hand]):
-        other_hand_projections = [h for h in all_hand_projections if h != evaluated_hand]
-        projections_centroid = np.median([h.cached_centroid for h in other_hand_projections], axis=0)
-        centroid_dist = np.linalg.norm(evaluated_hand.cached_centroid - projections_centroid)
-        if centroid_dist > max_hand_projection_dist_m:
-            return True
-        return False
 
     def __is_outlier(self,evaluated_hand:Hand, all_hand_projections:List[Hand]):
         mean = np.mean([h.cached_centroid for h in all_hand_projections])
