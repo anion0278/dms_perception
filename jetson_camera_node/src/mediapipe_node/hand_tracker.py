@@ -13,21 +13,25 @@ from pympler.asizeof import asizeof
 from std_msgs.msg import String
 from hand_data import Hand
 from typing import List
+import utils_ip as ip
 ros_cam_data_msg_size = 3575480
 
 class HandRecognizer():
     def __init__(self):
-        node_index = 1
-        rospy.init_node(config.hands_tracker_node_name + str(node_index))
+        node_suffix = ip.get_eth_ip_address().replace(".","_")
+        rospy.init_node(config.hands_tracker_node_name + str(node_suffix))
+        print("Started node: %s" % rospy.get_name())
         self.recognizer = rec.MPRecognizer(max_num_hands = 2, debug = True)
-        self.subscriber = rospy.Subscriber("camera_data_" + str(node_index), CameraData, self.__process_topic_data, queue_size = 1, 
+        self.subscriber = rospy.Subscriber("camera_data_" + str(node_suffix), CameraData, self.__process_topic_data, queue_size = 1, 
                                             buff_size= ros_cam_data_msg_size * 2) # fixes latency problem: https://answers.ros.org/question/220502/image-subscriber-lag-despite-queue-1/
         self.hands_pub = rospy.Publisher(rospy.get_name() + config.hands_data_topic, MultiHandData, queue_size = 1)
 
     def run(self):
+        print("Started listening...")
         rospy.spin()
-        
+    
     def __process_topic_data(self, cameraData):
+        print("Recieved camera data")
         #print("Size of ROS message (min buff size): " + str(asizeof(cameraData))) # currently 421248
         cv_color_img = ros_numpy.numpify(cameraData.color)
         cv_depth_img = np.array(cameraData.depth,dtype=float).reshape(cv_color_img.shape[0],cv_color_img.shape[1])
@@ -39,6 +43,7 @@ class HandRecognizer():
 
     def __publish_hands(self, recognized_hands_list:List[Hand]):
         multi_hand_msg = MultiHandData()
+        print("================= Recognized hands:")
         for hand in recognized_hands_list:
             hand_msg = HandData() 
             hand_msg.handSide = String(hand.side.name)
@@ -47,6 +52,7 @@ class HandRecognizer():
             for xyz_point in hand.landmarks_3d:
                 hand_msg.landmarks.append(Point(x=xyz_point[0],y=xyz_point[1],z=xyz_point[2]))
             multi_hand_msg.recognizedHands.append(hand_msg)
+            print("Hand %s %s" % (hand.gesture, hand.side.name))
         self.hands_pub.publish(multi_hand_msg)
         
     def __get_intrinsics(self, camera_info_msg):
