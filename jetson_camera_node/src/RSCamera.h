@@ -34,6 +34,7 @@ class RSCamera
 {
 
 public: // Why everything is static???, why the whole class is used as static?? this is very wrong
+	static void stop();
 	static void Init();
 	static void GetRGBImage(cv::Mat& image, bool detectAruco);
 	static void GetDepthImage(Image<float>& image);
@@ -54,6 +55,7 @@ public: // Why everything is static???, why the whole class is used as static?? 
 	static float GetScale() {return m_scale;}
 
 	static sensor_msgs::CameraInfo GetCameraInfo();
+	
 
 private:
 	static void Task();

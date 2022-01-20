@@ -14,6 +14,11 @@ using std::string;
 
 std::atomic<bool> RSCamera::isRunning;
 
+void RSCamera::stop()
+{
+	RSCamera::pipe.stop();
+}
+
 void RSCamera::Init()
 {
 	isRunning = false;

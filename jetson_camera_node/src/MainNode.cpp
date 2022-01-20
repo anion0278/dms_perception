@@ -602,6 +602,7 @@ int main(int argc, char** argv) // TODO Petr, please, divide this god-method int
 		ros::spinOnce();
 		loop_rate.sleep();
 	}
+	RSCamera::stop();
 	//RSCamera::Joint();	
 	//destroyAllWindows();
 
