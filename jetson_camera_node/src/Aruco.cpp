@@ -29,7 +29,7 @@ void PrintMatrix(Matrix m, int id)
 	std::cout << std::endl;
 }
 
-void Aruco::Init()
+void Aruco::Init(std::string pathToMatrixCalibration)
 {
 	//dparam->cornerRefinementMethod = cv::aruco::CornerRefineMethod::CORNER_REFINE_APRILTAG;
 	//dparam->cornerRefinementMethod = cv::aruco::CornerRefineMethod::CORNER_REFINE_SUBPIXEL;
@@ -71,7 +71,7 @@ void Aruco::Init()
 	gb_def[4] = m14;
 
 
-	auto flag = savedMat.LoadFromFile("/home/jetson/Desktop/DMS_01/camPose.bmat");
+	auto flag = savedMat.LoadFromFile(pathToMatrixCalibration);
 
 	if(flag)
 	{

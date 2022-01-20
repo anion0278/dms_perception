@@ -40,6 +40,7 @@
 #include <arpa/inet.h>
 #include "std_msgs/Int32.h"
 #include <boost/array.hpp>
+#include <ros/package.h>
 
 #include "jetson_camera_node/CameraData.h"
 #include "sensor_msgs/Image.h"
@@ -126,7 +127,7 @@ std::string GetIP()
   
     std::string ip = ip_address;
     std::replace(ip.begin(),ip.end(),'.','_');
-    printf("System IP Address is: %s\nh",ip_address);
+    printf("System IP Address is: %s\n",ip_address);
 	return ip;
 }
 
@@ -249,10 +250,11 @@ jetson_camera_node::CameraData CreateCameraDataMsg(
 	sensor_msgs::CameraInfo camInfo, 
 	float depthScale)
 {
-	std::vector<float> depthVec(depth,depth + camInfo.width*camInfo.height);
 	jetson_camera_node::CameraData camData;
-	//camData.depth = *cv_bridge::CvImage(std_msgs::Header(), "mono8", cvDepthImage).toImageMsg();
-	camData.depth = depthVec;
+
+	std::vector<float> depthVec(depth,depth + camInfo.width*camInfo.height);
+	camData.depth = depthVec; // in order to preserve accuracy we send Image as float vec
+
 	camData.color = *cv_bridge::CvImage(std_msgs::Header(), "rgb8", cvRgbImage).toImageMsg();
 	camData.cameraInfo = camInfo;
 	camData.depthScale = depthScale;
@@ -297,10 +299,28 @@ int main(int argc, char** argv) // TODO Petr, please, divide this god-method int
 
 	Camera_DESC cameraStreamSettings;
 	bool isDebug;
+	std::string relativePathToCalibrationFiles;
+	std::string thisPackageName = "jetson_camera_node"; // Change if ever package name changes
+	std::string thisPackageFullPath = ros::package::getPath(thisPackageName);
+
 	nh.param("cam_res_width", cameraStreamSettings.resW, 424); // default values
 	nh.param("cam_res_height", cameraStreamSettings.resH, 240);
 	nh.param("cam_rate", cameraStreamSettings.frameRate, 15);
 	nh.param("debug", isDebug, true);
+
+	nh.getParam("calibration_dir", relativePathToCalibrationFiles); // Required parameter (!)
+	relativePathToCalibrationFiles = thisPackageFullPath + "/" + relativePathToCalibrationFiles + "/"; // TODO multiplatform concatenation
+	std::string matrixCalibFilePath = relativePathToCalibrationFiles + "camPose.bmat";
+	std::string deltaFilterCalibFilePath = relativePathToCalibrationFiles + "deltaFilter.bfloat";
+	std::string robotModelPath = thisPackageFullPath + "/src/ur3_poly/";
+	std::string tableModelPath = thisPackageFullPath + "/src/ur10/ws2.STL";
+
+	printf("Looking for calibration at: %s \n", relativePathToCalibrationFiles.c_str());
+	printf("Matrix calibration path: %s \n", matrixCalibFilePath.c_str());
+	printf("Delta calibration path: %s \n", deltaFilterCalibFilePath.c_str());
+	printf("Robot model path: %s \n", robotModelPath.c_str());
+	printf("Table model path: %s \n", tableModelPath.c_str());
+
 
 	ros::ServiceClient clientInit = nh.serviceClient<jetson_camera_node::pcSubscribe>("sub");
 	ros::ServiceClient clientData = nh.serviceClient<jetson_camera_node::PointCloud>("data");
@@ -328,18 +348,18 @@ int main(int argc, char** argv) // TODO Petr, please, divide this god-method int
 	Image<float> depth(RSCamera::GetDepthDesc().resW, RSCamera::GetDepthDesc().resH, 20.f);
 	Image<float> source(RSCamera::GetDepthDesc().resW, RSCamera::GetDepthDesc().resH, 20.f);
 
-	Aruco::Init();
+	Aruco::Init(matrixCalibFilePath);
 	Clock::init();
 	OrbitCamera cam;
 	cam.SetProjectionParams(fAspectRatio, fFov, fNear, fFar);
 	cam.SetViewParams(0, 0, 0.3f);
 	Object obj;
 	//Object obj_cube;
-	obj.Load(obj.path_ws_ur3, 0.001f);
+	obj.Load(tableModelPath, 0.001f);
 	//obj_cube.Load("/home/jetson/Desktop/DMS_01/ur3_poly/joint_0", 0.00005f);
 	Matrix view = Matrix(-0.991634, -0.116853, -0.0548485, 0, -0.0145268, 0.523223, -0.852072, 0, 0.128265, -0.844146, -0.520543, 0, -0.10944, 0.359958, 1.84452, 1);
 	Robot rob;
-	rob.Init();
+	rob.Init(robotModelPath); // TODO should be obtained from args
 	float j = 0;
 	int index = 1;
 	//std::array<float, resH* resW> dept_mask;
@@ -363,10 +383,10 @@ int main(int argc, char** argv) // TODO Petr, please, divide this god-method int
 	//cam.SetView(Aruco::GetViewMatrix());
 	int keyPress = waitKey(1);
 	Matrix resMat;
-	resMat.LoadFromFile("/home/k354jn1/Desktop/camPose.bmat");
+	resMat.LoadFromFile(matrixCalibFilePath);
 	cam.SetView(resMat);
 	float deltaFilter = 0.12f;
-	LoadFromFile("/home/k354jn1/Desktop/deltaFilter.bfloat", deltaFilter);
+	LoadFromFile(deltaFilterCalibFilePath, deltaFilter);
 	while (ros::ok() && keyPress !=27)
 	{
 		//RSCamera::Lock(rgb_img);
@@ -410,13 +430,13 @@ int main(int argc, char** argv) // TODO Petr, please, divide this god-method int
 			Matrix::Multiply(mat, mat, rgbToDepthCalibration);
 
 			Matrix::Multiply(resMat,mat,calibManualMat);
-			resMat.SaveToFile("/home/k354jn1/Desktop/camPose.bmat");
+			resMat.SaveToFile(matrixCalibFilePath);
 			cam.SetView(resMat);
 
 			start_j = getTrackbarPos("start_joint",calibWinName);
 			end_j = getTrackbarPos("end_joint",calibWinName);
 			deltaFilter = ( getTrackbarPos("deltaFilter",calibWinName) - 1000)/1000.0;
-			SaveToFile("/home/k354jn1/Desktop/deltaFilter.bfloat", deltaFilter);
+			SaveToFile(deltaFilterCalibFilePath, deltaFilter);
 		}
 
 		Matrix actual(1.f);

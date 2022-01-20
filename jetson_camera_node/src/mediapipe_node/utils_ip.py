@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import socket
 import fcntl
 import struct
@@ -16,3 +18,7 @@ def get_eth_ip_address():
         return get_ip_address('eth0')
     except:
         return get_ip_address('lo')
+    #except Exception as ex:
+        #default_ip = "127.0.0.0" # for some reason localhost IP is different on PO side
+        #print("Could not get IP, setting defaut IP: %s" % default_ip)
+        #return default_ip

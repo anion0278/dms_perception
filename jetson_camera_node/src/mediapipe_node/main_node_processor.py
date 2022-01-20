@@ -21,6 +21,7 @@ import config
 # import tf2_ros as tf
 # import tf_conversions
 from hand_data import Hand
+import sys
 
 pcl_fields = [PointField('x', 0, PointField.FLOAT32, 1),
           PointField('y', 4, PointField.FLOAT32, 1),
@@ -32,7 +33,7 @@ colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
 max_hand_projection_dist_m = 0.1
 
 class DataAggregateProcessor():
-    def __init__(self, node_names):
+    def __init__(self, node_names, debug = True):
         rospy.init_node('hand_aggregation_processor')
         self.__init_subscribers(node_names)
         self.pc_communication = MainPcCommunication("192.168.1.20") 
@@ -179,6 +180,9 @@ def find_all_hand_tracker_nodes():
     return sorted(list(filter(lambda t: t.startswith("/"+ config.hands_tracker_node_name), rosnode.get_node_names())))
 
 if __name__ == "__main__":
-    proc = DataAggregateProcessor(find_all_hand_tracker_nodes())
+    args_without_ros = rospy.myargv(argv=sys.argv)
+    print(args_without_ros)
+    debug = True if len(args_without_ros) == 2 else False
+    proc = DataAggregateProcessor(find_all_hand_tracker_nodes(), debug)
     proc.run()
 
