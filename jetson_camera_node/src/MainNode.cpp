@@ -105,11 +105,18 @@ std::string GetIP()
      
     /*eth0 - define the ifr_name - port name
     where network attached.*/
-    memcpy(ifr.ifr_name, "eth0", IFNAMSIZ-1);
+	
+	memcpy(ifr.ifr_name, "eth0", IFNAMSIZ-1);
+
      
     /*Accessing network interface information by
     passing address using ioctl.*/
-    ioctl(fd, SIOCGIFADDR, &ifr);
+	if(ioctl(fd, SIOCGIFADDR, &ifr)<0)
+	{
+		memcpy(ifr.ifr_name, "lo", IFNAMSIZ-1);
+		ioctl(fd, SIOCGIFADDR, &ifr);
+	}
+    
     /*closing fd*/
     close(fd);
      

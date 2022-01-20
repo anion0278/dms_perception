@@ -4,6 +4,7 @@ import struct
 
 def get_ip_address(ifname):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    
     return socket.inet_ntoa(fcntl.ioctl(
         s.fileno(),
         0x8915,  # SIOCGIFADDR
@@ -11,4 +12,7 @@ def get_ip_address(ifname):
     )[20:24])
 
 def get_eth_ip_address():
-    return get_ip_address('eth0')
+    try:
+        return get_ip_address('eth0')
+    except:
+        return get_ip_address('lo')
