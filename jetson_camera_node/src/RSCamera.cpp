@@ -223,7 +223,7 @@ void RSCamera::ProjectDepthToPointCloud(const Image<float>& depth, const Image<b
 		{
 			if (mask.At(j, i))
 			{
-				float pixel[] = { j, i };
+				float pixel[] = {(int)j,(int)i};
 				Vec3 p(0, 0, 0);
 
 				rs2_deproject_pixel_to_point(p, &m_intrin, pixel, depth.At(j, i));

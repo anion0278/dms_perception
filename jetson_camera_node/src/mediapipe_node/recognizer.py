@@ -89,10 +89,12 @@ class MPRecognizer:
             depth_tf = cv2.cvtColor(self.__norm_depth(depth), cv2.COLOR_GRAY2RGB)
         
             for hand in hands:
-                index_point = hand.landmarks_2d[8]
-                cv2.circle(depth_tf, index_point, 2, (255,255,0), thickness=2, lineType=8, shift=0)
-                cv2.circle(color, index_point, 2, (255,255,0), thickness=2, lineType=8, shift=0)
-                cv2.putText(color,self.keypoint_classifier_labels[hand.gesture],index_point,cv2.FONT_HERSHEY_SIMPLEX,0.6,(255,255,255),1,cv2.LINE_AA)
+                for i,landmark in enumerate(hand.landmarks_2d):
+                    cv2.circle(depth_tf, landmark, 1, (255,255,255), thickness=2, lineType=8, shift=0)
+                    cv2.circle(color, landmark, 1, (255,255,255), thickness=2, lineType=8, shift=0)
+                    if i == 8:
+                        cv2.circle(color, landmark, 2, (255,255,0), thickness=2, lineType=8, shift=0)
+                        cv2.putText(color,self.keypoint_classifier_labels[hand.gesture],landmark,cv2.FONT_HERSHEY_SIMPLEX,0.6,(255,255,255),1,cv2.LINE_AA)
                 #cv2.putText(color,hand.side.name,index_point,cv2.FONT_HERSHEY_SIMPLEX,0.6,(255,255,255),1,cv2.LINE_AA)
             stack = np.concatenate((cv2.cvtColor(color, cv2.COLOR_RGB2BGR), depth_tf), axis=1)
             cv2.imshow("[AS] Processed RGB + depth", stack)
