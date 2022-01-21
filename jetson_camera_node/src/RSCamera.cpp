@@ -49,10 +49,9 @@ void RSCamera::Init()
 	descs.push_back(desc);
 }
 
-void RSCamera::GetRGBImage(cv::Mat& image, bool detectAruco = true)
+void RSCamera::GetColorImage(cv::Mat& image, bool detectAruco = true)
 {
 	std::cout<< "Recieving RGB data..." << std::endl;
-	//cv::Mat image;
 	if (m_rgb_frame != NULL)
 	{
 		{

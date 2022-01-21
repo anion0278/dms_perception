@@ -271,21 +271,20 @@ jetson_camera_node::CameraData CreateCameraDataMsg(
 
 void PublishCameraData(ros::Publisher rosCameraDataPublisher, Matrix cameraToRobotExtrinsics, bool isVisualizationEnabled = true)
 {
-	Mat cvRgbImg;
-	RSCamera::GetRGBImage(cvRgbImg, false); // TODO check if image already has been recieved during "manual_calibration"
+	Mat cvColorImg;
+	RSCamera::GetColorImage(cvColorImg, false); // TODO check if image already has been recieved during "manual_calibration"
 	Image<float> alignedDepth(RSCamera::GetDepthDesc().resW, RSCamera::GetDepthDesc().resH, 0);
 	
 	RSCamera::GetAlignedDepthImage(alignedDepth); 
-	Mat cvDepthImg = alignedDepth.ToOpenCV();
-	//auto msg = CreateCameraDataMsg(cvRgbImg, cvDepthImg, cameraToRobotExtrinsics, RSCamera::GetCameraInfo(), RSCamera::GetScale());
-	auto msg = CreateCameraDataMsg(cvRgbImg, alignedDepth.GetPtr(), cameraToRobotExtrinsics, RSCamera::GetCameraInfo(), RSCamera::GetScale());
+	auto msg = CreateCameraDataMsg(cvColorImg, alignedDepth.GetPtr(), cameraToRobotExtrinsics, RSCamera::GetCameraInfo(), RSCamera::GetScale());
 	rosCameraDataPublisher.publish(msg);
 	if (isVisualizationEnabled)
 	{
-		//imshow("Aligned Depth", cvDepthImg);
-		cv::cvtColor(cvRgbImg, cvRgbImg, cv::COLOR_BGR2RGB);
-		cv::cvtColor(cvDepthImg, cvDepthImg, cv::COLOR_GRAY2RGB);
-		hconcat(cvRgbImg, cvDepthImg, cvRgbImg);
+		Mat cvRgbImg, cvGrayImg;
+		Mat cvDepthImg = alignedDepth.ToOpenCV();
+		cv::cvtColor(cvColorImg, cvRgbImg, cv::COLOR_BGR2RGB);
+		cv::cvtColor(cvDepthImg, cvGrayImg, cv::COLOR_GRAY2RGB);
+		hconcat(cvRgbImg, cvGrayImg, cvRgbImg);
 		imshow("[PO] RGB and aligned Depth", cvRgbImg);
 	}
 }
