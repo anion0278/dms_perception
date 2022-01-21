@@ -18,8 +18,7 @@ import sensor_msgs.point_cloud2 as pcl2
 from typing import List
 import struct
 import config
-# import tf2_ros as tf
-# import tf_conversions
+# import tf2_ros # cannot be used in python3 !!!
 from hand_data import Hand
 import sys
 
@@ -39,7 +38,6 @@ class DataAggregateProcessor():
         self.pc_communication = MainPcCommunication("192.168.1.20") 
         self.left_pcl_publisher = rospy.Publisher("hands_point_clouds/left", PointCloud2, queue_size=1)
         self.right_pcl_publisher = rospy.Publisher("hands_point_clouds/right", PointCloud2, queue_size=1)
-        # self.tf_pub = tf.TransformBroadcaster()
 
     def __init_subscribers(self, node_names):
         if len(node_names) == 0: ValueError("Check node names!")
@@ -54,7 +52,7 @@ class DataAggregateProcessor():
     def run(self):
         rospy.spin()
 
-    def on_sync_data(self, *msgs_from_all_trackers: List[MultiHandData]):
+    def on_sync_data(self, *msgs_from_all_trackers: List[MultiHandData]): 
         left_hands : List[Hand] = []
         right_hands : List[Hand] = []
         pcl_right = []
@@ -87,19 +85,10 @@ class DataAggregateProcessor():
         right_hand_final = self.merge_hands(right_hands, override_gesture_right)
 
         self.pc_communication.send_hands(left_hand_final, right_hand_final)
-        self.left_pcl_publisher.publish(self.create_point_cloud(pcl_left))
-        # self.tf_pub.sendTransform(left_hand_final.cached_centroid,
-        #                     tf_conversions.quaternion_from_euler(0,0,0),
-        #                     rospy.Time.now(),
-        #                     "left_hand"
-        #                     "world")
-        self.right_pcl_publisher.publish(self.create_point_cloud(pcl_right))
-        # self.tf_pub.sendTransform(right_hand_final.cached_centroid,
-        #                     tf_conversions.quaternion_from_euler(0,0,0),
-        #                     rospy.Time.now(),
-        #                     "left_hand"
-        #                     "world")
 
+        self.left_pcl_publisher.publish(self.create_point_cloud(pcl_left))
+        self.right_pcl_publisher.publish(self.create_point_cloud(pcl_right))
+        
     def remove_outlier_hands(self, hands: List[Hand]) -> List[Hand]:
         # hands should belong to the same side! TODO check
         filtered_hands = []
