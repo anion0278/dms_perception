@@ -180,9 +180,6 @@ def find_all_hand_tracker_nodes():
     return sorted(list(filter(lambda t: t.startswith("/"+ config.hands_tracker_node_name), rosnode.get_node_names())))
 
 if __name__ == "__main__":
-    args_without_ros = rospy.myargv(argv=sys.argv)
-    print(args_without_ros)
-    debug = True if len(args_without_ros) == 2 else False
-    proc = DataAggregateProcessor(find_all_hand_tracker_nodes(), debug)
+    proc = DataAggregateProcessor(find_all_hand_tracker_nodes())
     proc.run()
 

@@ -78,10 +78,7 @@ class HandRecognizer():
         return extrinsics
 
 if __name__ == '__main__':
-    args_without_ros = rospy.myargv(argv=sys.argv)
-    print(args_without_ros)
-    debug = True if len(args_without_ros) == 2 else False
-    tracker = HandRecognizer(debug)
+    tracker = HandRecognizer()
     tracker.run()
 
 
