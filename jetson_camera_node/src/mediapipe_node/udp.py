@@ -1,5 +1,6 @@
 import socket
 import struct
+import numpy
 from typing import List
 
 from hand_data import Hand
@@ -22,7 +23,7 @@ class MainPcCommunication():
         self.udp_com = UDPClient(ip, 4023) 
     
     def send_hands(self, left_hand:Hand, right_hand:Hand):
-        udp_msg = [*self.__format_hand_data(left_hand), *self.__format_hand_data(right_hand)]
+        udp_msg = [*self.__format_hand_data(left_hand), *self.__format_hand_data(right_hand),*self.__format_other_data(left_hand),*self.__format_other_data(right_hand)]
         self.udp_com.send_floats(udp_msg)
 
     def __format_hand_data(self, hand: Hand) -> List[float]:
@@ -31,3 +32,8 @@ class MainPcCommunication():
         hand.update_centroid()
         # return [*hand.landmarks_3d[index_finger_counter], hand.gesture]
         return [*hand.cached_centroid, hand.gesture]
+
+    def __format_other_data(self, hand: Hand) -> List[float]:
+        if hand is None: return [0]*21*3
+        unpacked = numpy.reshape(hand.landmarks_3d,(1,21*3))[0]
+        return [*unpacked]
