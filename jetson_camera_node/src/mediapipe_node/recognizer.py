@@ -34,14 +34,14 @@ class MPRecognizer:
                 points_in_cam_frame = []
 
                 hand_base_point = self.__upper_clip(landmarks.landmark[0].x, landmarks.landmark[0].y,width,height)
-                hand_depth = cv_depth_image[hand_base_point[1],hand_base_point[0]]
+                hand_depth_history = [cv_depth_image[hand_base_point[1],hand_base_point[0]]]
                 # all (!) landmarks are always available, because MP assumes their positions even when they are not visible on the camera image  
                 for landmark in landmarks.landmark: 
                     (x,y) = self.__upper_clip(landmark.x, landmark.y,width,height)
                     relative_landmarks.append(x-hand_base_point[0])
                     relative_landmarks.append(y-hand_base_point[1])
                     hand_2d_coordinates.append((x,y))
-                    points_in_cam_frame.append(self.__get_point_in_camera_frame(x,y,hand_depth,cv_depth_image, intrinsics))
+                    points_in_cam_frame.append(self.__get_point_in_camera_frame(x,y,hand_depth_history,cv_depth_image, intrinsics))
 
                 hand_3d_coordinates = self.get_points_in_robot_frame(extrinsics, points_in_cam_frame)
 
@@ -61,14 +61,17 @@ class MPRecognizer:
         z_axis_index = 2
         depth_median = np.median(points_in_cam_frame, axis=0)[z_axis_index] 
         for point_in_cam_frame in points_in_cam_frame:
-            point_in_cam_frame[z_axis_index] = depth_median # set filtered Z value
+            #point_in_cam_frame[z_axis_index] = depth_median # set filtered Z value
             point_in_robot_frame = rs.rs2_transform_point_to_point(extrinsics, point_in_cam_frame)
             hand_3d_coordinates.append(point_in_robot_frame)
         return hand_3d_coordinates
 
-    def __get_point_in_camera_frame(self, x, y,depth, depth_img, intrinsics):
-        #depth_in_point = depth_img[y,x] # YX is the correct sequence!
-        depth_in_point = depth
+    def __get_point_in_camera_frame(self, x, y,hand_depth_history, depth_img, intrinsics):
+        depth_in_point = depth_img[y,x] # YX is the correct sequence!
+        if abs(hand_depth_history[0]-depth_in_point)>0.1:
+            depth_in_point = hand_depth_history[0]
+        else:
+            hand_depth_history[0] = depth_in_point
         return rs.rs2_deproject_pixel_to_point(intrinsics, (x,y), depth_in_point) 
 
     def __upper_clip(self,x,y,width,height):
