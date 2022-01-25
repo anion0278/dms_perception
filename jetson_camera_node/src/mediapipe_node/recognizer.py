@@ -43,7 +43,7 @@ class MPRecognizer:
                     hand_2d_coordinates.append((x,y))
 
                     #smecko
-                    if i == 5 or i==9 or i==13 or i==17:
+                    if i in [5, 9, 13, 17]:
                         hand_depth_history = [cv_depth_image[y,x]]
                     #endsmecko
 
