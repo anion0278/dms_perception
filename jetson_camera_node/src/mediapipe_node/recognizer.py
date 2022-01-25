@@ -45,7 +45,7 @@ class MPRecognizer:
                     hand_2d_coordinates.append((x,y))
 
                     #smecko
-                    if i == 5 or i==9 or i==13 or i==17:
+                    if i in [5, 9, 13, 17]:
                         if abs(hand_depth_history-cv_depth_image[y,x])<0.1:
                             hand_depth_history = [cv_depth_image[y,x]]
                     #endsmecko
@@ -65,12 +65,13 @@ class MPRecognizer:
                 hands.append(hand)
         return hands
 
-    def get_points_in_robot_frame(self, extrinsics, points_in_cam_frame):
+    def get_points_in_robot_frame(self, extrinsics, points_in_cam_frame, use_z_filter=False):
         hand_3d_coordinates = []
         z_axis_index = 2
         depth_median = np.median(points_in_cam_frame, axis=0)[z_axis_index] 
         for point_in_cam_frame in points_in_cam_frame:
-            #point_in_cam_frame[z_axis_index] = depth_median # set filtered Z value
+            if use_z_filter:
+                point_in_cam_frame[z_axis_index] = depth_median # set filtered Z value
             point_in_robot_frame = rs.rs2_transform_point_to_point(extrinsics, point_in_cam_frame)
             hand_3d_coordinates.append(point_in_robot_frame)
         return hand_3d_coordinates
