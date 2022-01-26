@@ -8,7 +8,7 @@ import config as c
 from model import KeyPointClassifier #tensorflow https://docs.nvidia.com/deeplearning/frameworks/install-tf-jetson-platform/index.html
 
 class MPRecognizer:
-    def __init__(self, model_complexity = 0, max_num_hands = 2,min_detection_confidence = 0.5,min_tracking_confidence = 0.5,debug = False):
+    def __init__(self, model_complexity = 1, max_num_hands = 2,min_detection_confidence = 0.5,min_tracking_confidence = 0.5,debug = False):
         self.mp_drawing = mp.solutions.drawing_utils
         self.mp_hands = mp.solutions.hands
         self.hands = self.mp_hands.Hands(model_complexity = model_complexity, 
@@ -101,17 +101,22 @@ class MPRecognizer:
     def recognize_hand(self,color,depth,intrinsics,scale,extrinsics):
         hands = self.__recognize(color,depth,intrinsics,scale,extrinsics)
         
+        info_color = (255,215,0)
+        pointer_color = (50,255,50)
+
+        circle_rad = 3
+
         if self.debug:
             depth_tf = cv2.cvtColor(self.__norm_depth(depth), cv2.COLOR_GRAY2RGB)
         
             for hand in hands:
                 for i,landmark in enumerate(hand.landmarks_2d):
-                    cv2.circle(depth_tf, landmark, 1, (255,255,255), thickness=2, lineType=8, shift=0)
-                    cv2.circle(color, landmark, 1, (255,255,255), thickness=2, lineType=8, shift=0)
+                    cv2.circle(depth_tf, landmark, 1, info_color, thickness=circle_rad, lineType=8, shift=0)
+                    cv2.circle(color, landmark, 1, info_color, thickness=circle_rad, lineType=8, shift=0)
                     if i == 8:
-                        cv2.circle(color, landmark, 2, (255,255,0), thickness=2, lineType=8, shift=0)
-                        cv2.putText(color,self.keypoint_classifier_labels[hand.gesture],landmark,cv2.FONT_HERSHEY_SIMPLEX,0.6,(255,255,255),1,cv2.LINE_AA)
-                #cv2.putText(color,hand.side.name,index_point,cv2.FONT_HERSHEY_SIMPLEX,0.6,(255,255,255),1,cv2.LINE_AA)
+                        cv2.circle(color, landmark, 2, pointer_color, thickness=circle_rad, lineType=8, shift=0)
+                        cv2.putText(color,self.keypoint_classifier_labels[hand.gesture],landmark,cv2.FONT_HERSHEY_SIMPLEX,1.0,info_color,2,cv2.LINE_AA)
+                #cv2.putText(color,hand.side.name,index_point,cv2.FONT_HERSHEY_SIMPLEX,0.6,info_color,1,cv2.LINE_AA)
             stack = np.concatenate((cv2.cvtColor(color, cv2.COLOR_RGB2BGR), depth_tf), axis=1)
             cv2.imshow("[AS] Processed RGB + depth", stack)
             cv2.waitKey(2)
