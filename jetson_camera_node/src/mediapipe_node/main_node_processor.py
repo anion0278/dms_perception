@@ -46,7 +46,7 @@ class DataAggregateProcessor():
             topic_name = node_name + config.hands_data_topic
             subs.append(message_filters.Subscriber(topic_name, MultiHandData, queue_size=1))
             print("Added source topic: %s" % topic_name)
-        self.sync = message_filters.ApproximateTimeSynchronizer(subs, queue_size=1, slop=0.5)
+        self.sync = message_filters.ApproximateTimeSynchronizer(subs, queue_size=1, slop=0.1)
         self.sync.registerCallback(self.on_sync_data)
 
     def run(self):
