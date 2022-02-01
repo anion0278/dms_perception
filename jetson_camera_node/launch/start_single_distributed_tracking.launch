@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="ip" /> 
+    <arg name="ip_suffix" /> 
+    <arg name="calibration_name" /> 
+    
+    <machine name="$(arg calibration_name)" address="$(arg ip)" user="k354jn1" password="t" env-loader="$(find jetson_camera_node)/launch/setup_env.sh" default="false" />
+
+    <node machine="$(arg calibration_name)" name="cam_data_processor_$(arg ip_suffix)" pkg="jetson_camera_node" type="main_node" args="_calibration_dir:=calibration/$(arg calibration_name)" respawn="true" output="screen"/>
+    <node machine="$(arg calibration_name)" name="hand_tracker_$(arg ip_suffix)" pkg="jetson_camera_node" type="hand_tracker.py" respawn="true" output="screen"/>
+</launch>

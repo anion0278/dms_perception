@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<launch>
+    <include file="$(find jetson_camera_node)/launch/start_single_distributed_tracking.launch">
+        <arg name="ip" value="192.168.1.146" /> 
+        <arg name="ip_suffix" value="192_168_1_146" /> 
+        <arg name="calibration_name" value="middle" /> 
+    </include>
+
+    <include file="$(find jetson_camera_node)/launch/start_single_distributed_tracking.launch">
+        <arg name="ip" value="192.168.1.147" /> 
+        <arg name="ip_suffix" value="192_168_1_147" /> 
+        <arg name="calibration_name" value="left" /> 
+    </include>
+
+    <include file="$(find jetson_camera_node)/launch/start_single_distributed_tracking.launch">
+        <arg name="ip" value="192.168.1.148" /> 
+        <arg name="ip_suffix" value="192_168_1_148" /> 
+        <arg name="calibration_name" value="right" /> 
+    </include>
+</launch>
