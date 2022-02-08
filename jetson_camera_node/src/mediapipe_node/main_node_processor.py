@@ -40,7 +40,7 @@ class DataAggregateProcessor():
         self.right_pcl_publisher = rospy.Publisher("hands_point_clouds/right", PointCloud2, queue_size=1)
 
     def __init_subscribers(self, node_names):
-        if len(node_names) == 0: ValueError("Check node names!")
+        if len(node_names) == 0: raise ValueError("No nodes were found! Check node names!")
         subs = []
         for node_name in node_names:
             topic_name = node_name + config.hands_data_topic
@@ -166,7 +166,8 @@ class DataAggregateProcessor():
         return occurence_count.most_common(1)[0][0]
 
 def find_all_hand_tracker_nodes():
-    return sorted(list(filter(lambda t: t.startswith("/"+ config.hands_tracker_node_name), rosnode.get_node_names())))
+    print(rosnode.get_node_names())
+    return sorted(list(filter(lambda t: t.startswith("/"+config.hands_tracker_node_name), rosnode.get_node_names())))
 
 if __name__ == "__main__":
     proc = DataAggregateProcessor(find_all_hand_tracker_nodes())

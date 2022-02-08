@@ -4,6 +4,9 @@
         <arg name="ip" value="192.168.1.146" /> 
         <arg name="ip_suffix" value="192_168_1_146" /> 
         <arg name="calibration_name" value="middle" /> 
+        <!-- <arg name="cam_width" value="640" /> 
+        <arg name="cam_height" value="480" /> 
+        <arg name="cam_rate" value="30" />  -->
     </include>
 
     <include file="$(find jetson_camera_node)/launch/start_single_distributed_tracking.launch">

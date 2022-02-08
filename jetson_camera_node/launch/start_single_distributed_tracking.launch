@@ -3,9 +3,14 @@
     <arg name="ip" /> 
     <arg name="ip_suffix" /> 
     <arg name="calibration_name" /> 
+    <arg name="cam_width" default="424" /> 
+    <arg name="cam_height" default="240" /> 
+    <arg name="cam_rate" default="15" /> 
     
     <machine name="$(arg calibration_name)" address="$(arg ip)" user="k354jn1" password="t" env-loader="$(find jetson_camera_node)/launch/setup_env.sh" default="false" />
 
-    <node machine="$(arg calibration_name)" name="cam_data_processor_$(arg ip_suffix)" pkg="jetson_camera_node" type="main_node" args="_calibration_dir:=calibration/$(arg calibration_name)" respawn="true" output="screen"/>
-    <node machine="$(arg calibration_name)" name="hand_tracker_$(arg ip_suffix)" pkg="jetson_camera_node" type="hand_tracker.py" respawn="true" output="screen"/>
+    <node machine="$(arg calibration_name)" name="cam_data_processor_$(arg ip_suffix)" pkg="jetson_camera_node" type="main_node" 
+            args="_calibration_dir:=calibration/$(arg calibration_name) _cam_res_height:=$(arg cam_height) _cam_res_width:=$(arg cam_width) _cam_rate:=$(arg cam_rate) _debug:=false" 
+            respawn="true" output="screen"/>
+    <node machine="$(arg calibration_name)" name="hands_tracker_$(arg ip_suffix)" pkg="jetson_camera_node" type="hand_tracker.py" respawn="true" output="screen"/>
 </launch>
